@@ -58,7 +58,7 @@ PROJECT_DEFAULT_MD = {
 
 INSTALLED_APPS = [
     "dal",
-    # 'corsheaders',
+    'corsheaders',
     "dal_select2",
     "django.contrib.admin",
     "django.contrib.auth",

@@ -21,8 +21,8 @@ APIS_OEBL_BIO_COLLECTION = "ÖBL Biographie"
 CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"
 
 CORS_ALLOW_METHODS = ("GET", "OPTIONS", "PUT", "POST", "PATCH", "DELETE")
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https:\/\/[-\w\.]+\.oeaw\.ac\.at$",
+CORS_ALLOWED_ORIGINS = [
+    "https://oebl-research.acdh-dev.oeaw.ac.at",
 ]
 
 ALLOWED_HOSTS = re.sub(

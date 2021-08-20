@@ -45,7 +45,7 @@ class LemmaResearchFilter(filters.FilterSet):
                     "title": serializers.CharField(required=False),
                 },
             ),
-            "selected": serializers.BooleanField(default=False),
+            "selected": serializers.BooleanField(default=False, required=False),
             "gnd": serializers.ListField(child=serializers.URLField(), required=False),
             "firstName": serializers.CharField(required=False),
             "lastName": serializers.CharField(required=False),

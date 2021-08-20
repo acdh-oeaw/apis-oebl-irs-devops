@@ -23,6 +23,7 @@ CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"
 CORS_ALLOW_METHODS = ("GET", "OPTIONS", "PUT", "POST", "PATCH", "DELETE")
 CORS_ALLOWED_ORIGINS = [
     "https://oebl-research.acdh-dev.oeaw.ac.at",
+    "http://localhost:8080"
 ]
 
 ALLOWED_HOSTS = re.sub(

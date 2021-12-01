@@ -37,7 +37,8 @@
 	},
 	"remoteEnv": {
 		"DATABASE_URL": "postgresql://postgres:postgres@db:5432/postgres",
-		"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C"
+		"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C",
+		"OEBL_BROKER": "guest@rabbitmq" 
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [

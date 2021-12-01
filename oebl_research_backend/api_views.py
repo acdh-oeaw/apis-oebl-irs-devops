@@ -5,8 +5,6 @@ from rest_framework import viewsets
 from rest_framework import serializers
 from .tasks import scrape
 from rest_framework.response import Response
-from bson.objectid import ObjectId
-from bson.json_util import dumps
 from drf_spectacular.utils import inline_serializer, extend_schema, extend_schema_view
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import status

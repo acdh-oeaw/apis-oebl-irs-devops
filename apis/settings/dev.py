@@ -23,7 +23,10 @@ CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"
 CORS_ALLOW_METHODS = ("GET", "OPTIONS", "PUT", "POST", "PATCH", "DELETE")
 CORS_ALLOWED_ORIGINS = [
     "https://oebl-research.acdh-dev.oeaw.ac.at",
-    "http://localhost:8080"
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "http://frontend:3333",
+    "http://localhost:40651"
 ]
 
 ALLOWED_HOSTS = re.sub(
@@ -33,7 +36,7 @@ ALLOWED_HOSTS = re.sub(
         "GITLAB_ENVIRONMENT_URL", os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
     ),
 ).split(",")
-ALLOWED_HOSTS += ["oebl-irs-backend.acdh-dev.oeaw.ac.at"]
+ALLOWED_HOSTS += ["oebl-irs-backend.acdh-dev.oeaw.ac.at", "backend", "backend:8000", "localhost:40651"]
 # You need to allow '10.0.0.0/8' for service health checks.
 ALLOWED_CIDR_NETS = ["10.0.0.0/8", "127.0.0.0/8"]
 

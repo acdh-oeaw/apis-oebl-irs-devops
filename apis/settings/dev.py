@@ -18,15 +18,15 @@ BIRTH_REL_NAME = "place of birth"
 DEATH_REL_NAME = "place of death"
 APIS_BASE_URI = "https://apis.acdh.oeaw.ac.at/"
 APIS_OEBL_BIO_COLLECTION = "ÖBL Biographie"
-CSRF_HEADER_NAME = "HTTP_X_CSRFTOKEN"
 
-CORS_ALLOW_METHODS = ("GET", "OPTIONS", "PUT", "POST", "PATCH", "DELETE")
-CORS_ALLOWED_ORIGINS = [
-    "https://oebl-research.acdh-dev.oeaw.ac.at",
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-    "http://frontend:3333",
-    "http://localhost:40651"
+CSP_DEFAULT_SRC = ("'self'", 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 
+                    'ajax.googleapis.com', 'cdn.rawgit.com', "*.acdh.oeaw.ac.at", "unpkg.com", "fonts.gstatic.com", 
+                    "cdn.datatables.net", "code.highcharts.com", "*.acdh-dev.oeaw.ac.at", "*.acdh.oeaw.ac.at",
+                    "openstreetmap.org", "*.openstreetmap.org", "localhost")
+CSP_FRAME_SRC = ('sennierer.github.io',)
+
+CORS_ORIGIN_WHITELIST = [
+    'http://127.0.0.1:8080',
 ]
 
 ALLOWED_HOSTS = re.sub(

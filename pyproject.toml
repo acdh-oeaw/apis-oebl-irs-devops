@@ -25,6 +25,8 @@ apis-core = "~0.16"
 django-celery-results = "^2.0.1"
 supervisor = "^4.2.1"
 whitenoise = "^5.3.0"
+django-csp = "^3.7"
+djoser = "^2.1.0"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

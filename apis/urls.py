@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
 from django.urls import path
-from rest_framework.authtoken.views import obtain_auth_token, ObtainAuthToken
+from rest_framework.authtoken.views import obtain_auth_token
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
 from apis_core.apis_entities.api_views import GetEntityGeneric
@@ -73,11 +73,9 @@ if "oebl_research_backend" in settings.INSTALLED_APPS:
         )
     )
 
-urlpatterns.append(
-    path(
-        "api_login/",
-        ensure_csrf_cookie(ObtainAuthToken.as_view()),
-        name="api_token_auth",
-    )
-)
+urlpatterns = urlpatterns + [
+    url(r'^auth/', include('djoser.urls')),
+    url(r'^auth/', include('djoser.urls.authtoken')),
+]
+
 handler404 = "webpage.views.handler404"

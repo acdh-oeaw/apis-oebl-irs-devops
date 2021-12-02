@@ -64,7 +64,11 @@
 					"4",
 					"-P",
 					"solo",
-				]
+				],
+				"env": {
+						"FRONTEND_POST_FINISHED": "http://frontend:3333/message/import-lemmas",
+						"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C"
+				},
 			},
 			{
 				"name": "Python: Celery limited",
@@ -86,7 +90,11 @@
 					"limited_queue",
 					"-P",
 					"solo",
-				]
+				],
+				"env": {
+						"FRONTEND_POST_FINISHED": "http://frontend:3333/message/import-lemmas",
+						"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C"
+				},
 			},
 		]
 	}

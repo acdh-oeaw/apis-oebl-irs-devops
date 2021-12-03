@@ -38,7 +38,8 @@
 	"remoteEnv": {
 		"DATABASE_URL": "postgresql://postgres:postgres@db:5432/postgres",
 		"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C",
-		"OEBL_BROKER": "guest@rabbitmq" 
+		"OEBL_BROKER": "guest@rabbitmq",
+		"FRONTEND_POST_FINISHED": "http://frontend:8080/message/import-lemmas"
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [

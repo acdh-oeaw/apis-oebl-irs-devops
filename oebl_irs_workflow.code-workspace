@@ -67,6 +67,7 @@
 				],
 				"env": {
 						"FRONTEND_POST_FINISHED": "http://frontend:3333/message/import-lemmas",
+						"FRONTEND_POST_FINISHED_ISSUELEMMA": "http://frontend:3333/message/import-issue-lemmas",
 						"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C"
 				},
 			},
@@ -93,6 +94,7 @@
 				],
 				"env": {
 						"FRONTEND_POST_FINISHED": "http://frontend:3333/message/import-lemmas",
+						"FRONTEND_POST_FINISHED_ISSUELEMMA": "http://frontend:3333/message/import-issue-lemmas",
 						"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C"
 				},
 			},

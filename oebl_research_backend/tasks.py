@@ -337,6 +337,8 @@ def scrape(
             }
             if "gnd" in ent.keys():
                 gnds = []
+                if isinstance(ent["gnd"], str):
+                    ent["gnd"] = [ent["gnd"]]
                 for g in ent["gnd"]:
                     ent_dict["uris"].append(f"https://d-nb.info/gnd/{g}/")
                     gnds.append(g)
@@ -349,7 +351,7 @@ def scrape(
                     dict_user_cols[k] = v
             list_entry_dict["columns_user"] = dict_user_cols
             if "id" in ent.keys():
-                list_entry_dict["source_id"] = ent["id"]
+                list_entry_dict["source_id"] = ent["id"] if ent["id"] > 0 else idx
             else:
                 list_entry_dict["source_id"] = idx
             pers, created = Person.objects.get_or_create(**ent_dict)

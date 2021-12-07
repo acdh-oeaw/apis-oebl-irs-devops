@@ -47,6 +47,7 @@ INSTALLED_APPS += [
     "oebl_irs_workflow",
     "oebl_research_backend",
     "django_celery_results",
+    "django_extensions"
 ]
 
 CELERY_RESULT_BACKEND = "django-db"

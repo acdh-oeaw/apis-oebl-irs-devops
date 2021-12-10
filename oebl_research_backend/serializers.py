@@ -44,6 +44,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
     gnd = serializers.SerializerMethodField(method_name="get_gnd")
     firstName = serializers.CharField(source="person.first_name")
     lastName = serializers.CharField(source="person.name")
+    gender = serializers.CharField(source="person.gender")
     dateOfBirth = serializers.DateField(source="person.date_of_birth")
     dateOfDeath = serializers.DateField(source="person.date_of_death")
     list = ListSerializerLimited(required=False, allow_null=True)
@@ -90,6 +91,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "lastName": "name",
             "dateOfBirth": "date_of_birth",
             "dateOfDeath": "date_of_death",
+            "gender": "gender"
         }
         for pers_field, pers_map in pers_mapping.items():
             if pers_field in self.initial_data.keys():
@@ -119,6 +121,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "lastName",
             "dateOfBirth",
             "dateOfDeath",
+            "gender",
             "columns_user",
             "columns_scrape",
             "deleted",

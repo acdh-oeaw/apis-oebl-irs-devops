@@ -12,7 +12,7 @@ from typing import Union
 import re
 
 from django.conf import settings
-from .models import Person, List, ListEntry
+from .models import IRSPerson, List, ListEntry
 from apis_core.helper_functions.RDFParser import RDFParser
 from oebl_irs_workflow.models import Lemma, LemmaStatus, IssueLemma, Issue
 from .serializers import ListEntrySerializer
@@ -354,7 +354,7 @@ def scrape(
                 list_entry_dict["source_id"] = ent["id"] if ent["id"] > 0 else idx
             else:
                 list_entry_dict["source_id"] = idx
-            pers, created = Person.objects.get_or_create(**ent_dict)
+            pers, created = IRSPerson.objects.get_or_create(**ent_dict)
             list_entry_dict["person_id"] = pers.pk
             list_entry_dict["list_id"] = lst.pk
             list_entry_dict["selected"] = ent.get("selected", False)
@@ -424,7 +424,7 @@ def create_new_workflow_lemma(
         "lemma_id": workflow_lemma.pk,
     }
     il = IssueLemma.objects.create(**lemma_issue)
-    research_lemma = Person.objects.get(pk=research_lemma_id)
+    research_lemma = IRSPerson.objects.get(pk=research_lemma_id)
     research_lemma.irs_person = workflow_lemma
     research_lemma.save()
     return il.pk

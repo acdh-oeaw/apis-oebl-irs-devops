@@ -10,7 +10,7 @@ from drf_spectacular.types import OpenApiTypes
 from rest_framework import status
 from django_filters import rest_framework as filters
 
-from .models import ListEntry, Person, List, Editor
+from .models import ListEntry, List, Editor
 from .serializers import ListEntrySerializer, ListSerializer
 
 

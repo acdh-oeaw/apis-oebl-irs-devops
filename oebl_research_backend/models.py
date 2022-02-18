@@ -7,9 +7,9 @@ import os
 
 
 CHOICES_GENDER = (
-    ('m', "männlich"),
-    ('f', "weiblich"),
-    ('d', 'divers'),
+    ('männlich', "männlich"),
+    ('weiblich', "weiblich"),
+    ('divers', 'divers'),
 )
 
 CHOICES_DATE_MODIFIER = (
@@ -59,7 +59,7 @@ class IRSPerson(models.Model):
     bio_note = models.TextField(blank=True, null=True)
     religion = models.CharField(max_length=255, blank=True, null=True)
     title_of_nobility = models.CharField(max_length=255, blank=True, null=True)
-    gender = models.CharField(max_length=1, blank=True, null=True, choices=CHOICES_GENDER)
+    gender = models.CharField(max_length=10, blank=True, null=True, choices=CHOICES_GENDER)
     uris = ArrayField(models.URLField(), null=True, blank=True)
 
     def __str__(self):

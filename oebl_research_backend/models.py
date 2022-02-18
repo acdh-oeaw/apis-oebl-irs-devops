@@ -9,7 +9,7 @@ import os
 CHOICES_GENDER = (
     ('m', "männlich"),
     ('f', "weiblich"),
-    ('d', 'divers')
+    ('d', 'divers'),
 )
 
 CHOICES_DATE_MODIFIER = (

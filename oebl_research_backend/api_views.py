@@ -1,3 +1,5 @@
+from typing_extensions import Required
+from numpy import require
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.mixins import DestroyModelMixin
 from rest_framework.permissions import IsAuthenticated
@@ -10,7 +12,7 @@ from drf_spectacular.types import OpenApiTypes
 from rest_framework import status
 from django_filters import rest_framework as filters
 
-from .models import ListEntry, List, Editor
+from .models import ListEntry, List, Editor, CHOICES_GENDER
 from .serializers import ListEntrySerializer, ListSerializer
 
 
@@ -49,6 +51,7 @@ class LemmaResearchFilter(filters.FilterSet):
             "lastName": serializers.CharField(required=False),
             "dateOfBirth": serializers.DateField(required=False),
             "dateOfDeath": serializers.DateField(required=False),
+            "gender": serializers.ChoiceField(CHOICES_GENDER, required=False)
         },
     ),
     responses={
@@ -86,6 +89,7 @@ class LemmaResearchFilter(filters.FilterSet):
                         "lastName": serializers.CharField(required=False),
                         "dateOfBirth": serializers.DateField(required=False),
                         "dateOfDeath": serializers.DateField(required=False),
+                        "gender": serializers.ChoiceField(CHOICES_GENDER, required=False),
                         "columns_user": OpenApiTypes.OBJECT,
                         "columns_scrape": OpenApiTypes.OBJECT,
                     },
@@ -116,6 +120,7 @@ class LemmaResearchFilter(filters.FilterSet):
                     "lastName": serializers.CharField(required=False),
                     "dateOfBirth": serializers.DateField(required=False),
                     "dateOfDeath": serializers.DateField(required=False),
+                    "gender": serializers.ChoiceField(CHOICES_GENDER, required=False)
                 },
                 many=True,
             ),

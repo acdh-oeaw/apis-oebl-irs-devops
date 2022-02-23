@@ -1,3 +1,4 @@
+import typing
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.db.models.deletion import SET_NULL
@@ -44,12 +45,19 @@ class ProfessionGroup(models.Model):
     name = models.CharField(max_length=255)
 
 
+class FullName(typing.TypedDict):
+    """For defining the structure in the django json field. Just as a hint …"""
+    first_name: typing.Optional[str]
+    last_name: typing.Optional[str]
+
+
 class IRSPerson(models.Model):
     irs_person = models.ForeignKey(
         ResearchPerson, on_delete=models.SET_NULL, blank=True, null=True
     )
     name = models.CharField(max_length=255, blank=True, null=True)
     first_name = models.CharField(max_length=255, blank=True, null=True)
+    alternative_names: typing.List[FullName] = models.JSONField(default=list, null=True, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
     date_of_birth_modifier = models.CharField(max_length=5, null=True, blank=True, choices=CHOICES_DATE_MODIFIER)
     date_of_death = models.DateField(blank=True, null=True)

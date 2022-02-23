@@ -1,3 +1,5 @@
+from importlib.metadata import requires
+import typing
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
@@ -6,6 +8,57 @@ from typing import List as ListType
 from .models import ListEntry, List
 
 gndType = ListType[str]
+
+
+def create_no_wrong_properties_validator(
+        allowed_properties: typing.Set[str], 
+    ) -> typing.Callable[[dict, ], None]:
+    def validate_properties(incoming_dict: dict) -> None:
+        incoming_properties = set(incoming_dict.keys())
+        not_allowed_properties = incoming_properties.difference(allowed_properties)
+        if not_allowed_properties:
+            raise serializers.ValidationError(detail=rf'Incomming properties {not_allowed_properties} are not permitted, only use {allowed_properties}')
+    return validate_properties 
+
+
+def create_mixed_types_validator(
+        allowed_property_types: typing.Set[typing.Type] = {str, }, 
+        allowed_value_types: typing.Set[typing.Type] = {str, None}
+    ) -> typing.Callable[[dict, ], None]:
+    
+    def validate_mixed_types(incoming_dict: dict) -> None:
+        wrong_value_types = {key: value for key, value in incoming_dict.items() if value.__class__ not in allowed_value_types}
+        if wrong_value_types:
+            raise serializers.ValidationError(detail=rf'All values must be one of {allowed_value_types}. The following are not: {wrong_value_types}')
+
+        wrong_key_types = {key for key in incoming_dict.keys() if key.__class__ not in allowed_property_types}
+        if wrong_key_types:
+            raise serializers.ValidationError(detail=rf'All properties must be one of {allowed_property_types}. The following are not: {wrong_key_types}')
+
+    return validate_mixed_types
+
+
+def create_alternative_names_field(**additional_params: dict) -> serializers.ListField:
+    """
+    Define the field dynamically.
+
+    Why define? Do not want to type them over and over
+    Why define dynamically? 
+        - First list field with no source changes `.source = None` to `.source = ''` which leads to an assertion error in ListField
+        - And who knows, that kind of horrors await me, if I just pass that object around! ;-)
+    """
+    return serializers.ListField(
+        **additional_params,
+        required=False, allow_null=True, default=list,
+        child = serializers.DictField(
+                    source=None,
+                    validators=[
+                        create_no_wrong_properties_validator({'firstName', 'lastName'}),
+                        create_mixed_types_validator({str, }, {str, None})
+                    ]   
+                )
+        )
+                            
 
 
 class EditorSerializer(serializers.Serializer):
@@ -44,6 +97,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
     gnd = serializers.SerializerMethodField(method_name="get_gnd")
     firstName = serializers.CharField(source="person.first_name")
     lastName = serializers.CharField(source="person.name")
+    alternativeNames = create_alternative_names_field(source='person.alternative_names')
     gender = serializers.CharField(source="person.gender")
     dateOfBirth = serializers.DateField(source="person.date_of_birth")
     dateOfDeath = serializers.DateField(source="person.date_of_death")
@@ -89,6 +143,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
         pers_mapping = {
             "firstName": "first_name",
             "lastName": "name",
+            "alternativeNames": "alternative_names",
             "dateOfBirth": "date_of_birth",
             "dateOfDeath": "date_of_death",
             "gender": "gender"
@@ -119,6 +174,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "list",
             "firstName",
             "lastName",
+            "alternativeNames",
             "dateOfBirth",
             "dateOfDeath",
             "gender",

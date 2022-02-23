@@ -13,7 +13,7 @@ from rest_framework import status
 from django_filters import rest_framework as filters
 
 from .models import ListEntry, List, Editor, CHOICES_GENDER
-from .serializers import ListEntrySerializer, ListSerializer
+from .serializers import ListEntrySerializer, ListSerializer, create_alternative_names_field
 
 
 class LemmaResearchFilter(filters.FilterSet):
@@ -49,6 +49,7 @@ class LemmaResearchFilter(filters.FilterSet):
             "gnd": serializers.ListField(child=serializers.URLField(), required=False),
             "firstName": serializers.CharField(required=False),
             "lastName": serializers.CharField(required=False),
+            "alternativeNames": create_alternative_names_field(),
             "dateOfBirth": serializers.DateField(required=False),
             "dateOfDeath": serializers.DateField(required=False),
             "gender": serializers.ChoiceField(CHOICES_GENDER, required=False)
@@ -87,6 +88,7 @@ class LemmaResearchFilter(filters.FilterSet):
                         ),
                         "firstName": serializers.CharField(required=False),
                         "lastName": serializers.CharField(required=False),
+                        "alternativeNames": create_alternative_names_field(),
                         "dateOfBirth": serializers.DateField(required=False),
                         "dateOfDeath": serializers.DateField(required=False),
                         "gender": serializers.ChoiceField(CHOICES_GENDER, required=False),
@@ -118,6 +120,7 @@ class LemmaResearchFilter(filters.FilterSet):
                     "selected": serializers.BooleanField(default=False),
                     "firstName": serializers.CharField(required=False),
                     "lastName": serializers.CharField(required=False),
+                    "alternativeNames": create_alternative_names_field(),
                     "dateOfBirth": serializers.DateField(required=False),
                     "dateOfDeath": serializers.DateField(required=False),
                     "gender": serializers.ChoiceField(CHOICES_GENDER, required=False)

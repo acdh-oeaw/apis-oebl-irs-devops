@@ -1,11 +1,13 @@
 from importlib.metadata import requires
+import secrets
 import typing
+from numpy import source
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
 from typing import List as ListType
 
-from .models import ListEntry, List
+from .models import ListEntry, List, SecondaryLiterature
 
 gndType = ListType[str]
 
@@ -60,6 +62,28 @@ def create_alternative_names_field(**additional_params: dict) -> serializers.Lis
         )
                             
 
+def create_secondary_literature_field(**additional_params: dict) -> serializers.ListField:
+    """
+    Define the field dynamically.
+
+    Why define? Do not want to type them over and over
+    Why define dynamically? 
+        - First list field with no source changes `.source = None` to `.source = ''` which leads to an assertion error in ListField
+        - And who knows, that kind of horrors await me, if I just pass that object around! ;-)
+    """
+    return serializers.ListField(
+        **additional_params,
+        required=False, allow_null=True, default=list,
+        child = serializers.DictField(
+                    source=None,
+                    validators=[
+                        create_no_wrong_properties_validator({'title', 'pages', 'id'}),
+                        create_mixed_types_validator({str, }, {str, int, None})
+                    ]   
+                )
+        )
+
+
 
 class EditorSerializer(serializers.Serializer):
     userId = serializers.IntegerField(source="pk")
@@ -103,6 +127,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
     dateOfDeath = serializers.DateField(source="person.date_of_death")
     list = ListSerializerLimited(required=False, allow_null=True)
     deleted = serializers.BooleanField(default=False)
+    secondaryLiterature = create_secondary_literature_field(source='person.secondary_literature')
 
     def update(self, instance, validated_data):
         instance.selected = validated_data.get("selected", instance.selected)
@@ -146,7 +171,8 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "alternativeNames": "alternative_names",
             "dateOfBirth": "date_of_birth",
             "dateOfDeath": "date_of_death",
-            "gender": "gender"
+            "gender": "gender",
+            "secondaryLiterature": "secondary_literature",
         }
         for pers_field, pers_map in pers_mapping.items():
             if pers_field in self.initial_data.keys():
@@ -182,4 +208,5 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "columns_scrape",
             "deleted",
             "last_updated",
+            "secondaryLiterature",
         ]

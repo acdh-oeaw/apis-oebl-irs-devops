@@ -51,6 +51,13 @@ class FullName(typing.TypedDict):
     last_name: typing.Optional[str]
 
 
+class SecondaryLiterature(typing.TypedDict):
+    """For defining the structure in the django json field. Just as a hint …"""
+    id: int
+    title: str
+    pages: typing.Optional[str]
+
+
 class IRSPerson(models.Model):
     irs_person = models.ForeignKey(
         ResearchPerson, on_delete=models.SET_NULL, blank=True, null=True
@@ -69,6 +76,7 @@ class IRSPerson(models.Model):
     title_of_nobility = models.CharField(max_length=255, blank=True, null=True)
     gender = models.CharField(max_length=10, blank=True, null=True, choices=CHOICES_GENDER)
     uris = ArrayField(models.URLField(), null=True, blank=True)
+    secondary_literature: typing.List[SecondaryLiterature] = models.JSONField(default=list, null=True, blank=True)
 
     def __str__(self):
         return f"{self.name}, {self.first_name}"

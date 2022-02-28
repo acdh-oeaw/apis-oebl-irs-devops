@@ -84,6 +84,22 @@ def create_secondary_literature_field(**additional_params: dict) -> serializers.
         )
 
 
+def create_zotero_keys_field(**additional_params: dict) -> serializers.ListField:
+    """
+    Define the field dynamically.
+
+    Why define? Do not want to type them over and over
+    Why define dynamically? 
+        - First list field with no source changes `.source = None` to `.source = ''` which leads to an assertion error in ListField
+        - And who knows, that kind of horrors await me, if I just pass that object around! ;-)
+    """
+    return serializers.ListField(
+        **additional_params,
+        required=False, allow_null=True, default=list,
+        child = serializers.URLField(
+                    source=None,
+            )
+        )
 
 class EditorSerializer(serializers.Serializer):
     userId = serializers.IntegerField(source="pk")
@@ -128,6 +144,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
     list = ListSerializerLimited(required=False, allow_null=True)
     deleted = serializers.BooleanField(default=False)
     secondaryLiterature = create_secondary_literature_field(source='person.secondary_literature')
+    zoteroKeys = create_zotero_keys_field(source='person.zotero_keys')
 
     def update(self, instance, validated_data):
         instance.selected = validated_data.get("selected", instance.selected)
@@ -173,6 +190,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "dateOfDeath": "date_of_death",
             "gender": "gender",
             "secondaryLiterature": "secondary_literature",
+            "zoteroKeys": "zotero_keys",
         }
         for pers_field, pers_map in pers_mapping.items():
             if pers_field in self.initial_data.keys():
@@ -209,4 +227,5 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "deleted",
             "last_updated",
             "secondaryLiterature",
+            "zoteroKeys",
         ]

@@ -13,7 +13,7 @@ from rest_framework import status
 from django_filters import rest_framework as filters
 
 from .models import ListEntry, List, Editor, CHOICES_GENDER
-from .serializers import ListEntrySerializer, ListSerializer, create_alternative_names_field, create_secondary_literature_field
+from .serializers import ListEntrySerializer, ListSerializer, create_alternative_names_field, create_secondary_literature_field, create_zotero_keys_field
 
 
 class LemmaResearchFilter(filters.FilterSet):
@@ -54,6 +54,7 @@ class LemmaResearchFilter(filters.FilterSet):
             "dateOfDeath": serializers.DateField(required=False),
             "gender": serializers.ChoiceField(CHOICES_GENDER, required=False),
             "secondaryLiterature": create_secondary_literature_field(),
+            "zoteroKeys": create_zotero_keys_field(),
         },
     ),
     responses={
@@ -96,6 +97,7 @@ class LemmaResearchFilter(filters.FilterSet):
                         "columns_user": OpenApiTypes.OBJECT,
                         "columns_scrape": OpenApiTypes.OBJECT,
                         "secondaryLiterature": create_secondary_literature_field(),
+                        "zoteroKeys": create_zotero_keys_field(),
                     },
                 ),
             },
@@ -127,6 +129,7 @@ class LemmaResearchFilter(filters.FilterSet):
                     "dateOfDeath": serializers.DateField(required=False),
                     "gender": serializers.ChoiceField(CHOICES_GENDER, required=False),
                     "secondaryLiterature": create_secondary_literature_field(),
+                    "zoteroKeys": create_zotero_keys_field(),
                 },
                 many=True,
             ),

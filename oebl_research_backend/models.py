@@ -77,7 +77,10 @@ class IRSPerson(models.Model):
     gender = models.CharField(max_length=10, blank=True, null=True, choices=CHOICES_GENDER)
     uris = ArrayField(models.URLField(), null=True, blank=True)
     secondary_literature: typing.List[SecondaryLiterature] = models.JSONField(default=list, null=True, blank=True)
-    zotero_keys: typing.List[str] = ArrayField(base_field=models.URLField(), null=True, blank=True, default=list)
+    zotero_keys_by: typing.List[str] = ArrayField(base_field=models.TextField(), null=True, blank=True, default=list)
+    """Literate by this person stored as zoteroKeys"""
+    zotero_keys_about: typing.List[str] = ArrayField(base_field=models.TextField(), null=True, blank=True, default=list)
+    """Literate about this person stored as zoteroKeys"""
 
     def __str__(self):
         return f"{self.name}, {self.first_name}"

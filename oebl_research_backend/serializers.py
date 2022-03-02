@@ -96,7 +96,7 @@ def create_zotero_keys_field(**additional_params: dict) -> serializers.ListField
     return serializers.ListField(
         **additional_params,
         required=False, allow_null=True, default=list,
-        child = serializers.URLField(
+        child = serializers.CharField(
                     source=None,
             )
         )
@@ -144,7 +144,8 @@ class ListEntrySerializer(serializers.ModelSerializer):
     list = ListSerializerLimited(required=False, allow_null=True)
     deleted = serializers.BooleanField(default=False)
     secondaryLiterature = create_secondary_literature_field(source='person.secondary_literature')
-    zoteroKeys = create_zotero_keys_field(source='person.zotero_keys')
+    zoteroKeysBy = create_zotero_keys_field(source='person.zotero_keys_by')
+    zoteroKeysAbout = create_zotero_keys_field(source='person.zotero_keys_about')
 
     def update(self, instance, validated_data):
         instance.selected = validated_data.get("selected", instance.selected)
@@ -190,7 +191,8 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "dateOfDeath": "date_of_death",
             "gender": "gender",
             "secondaryLiterature": "secondary_literature",
-            "zoteroKeys": "zotero_keys",
+            "zoteroKeysBy": "zotero_keys_by",
+            "zoteroKeysAbout": "zotero_keys_about",
         }
         for pers_field, pers_map in pers_mapping.items():
             if pers_field in self.initial_data.keys():
@@ -227,5 +229,6 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "deleted",
             "last_updated",
             "secondaryLiterature",
-            "zoteroKeys",
+            "zoteroKeysBy",
+            "zoteroKeysAbout",
         ]

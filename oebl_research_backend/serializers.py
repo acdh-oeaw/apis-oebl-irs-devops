@@ -84,6 +84,28 @@ def create_secondary_literature_field(**additional_params: dict) -> serializers.
         )
 
 
+def create_gideon_legacy_literature_field(**additional_params: dict) -> serializers.ListField:
+    """
+    Define the field dynamically.
+
+    Why define? Do not want to type them over and over
+    Why define dynamically? 
+        - First list field with no source changes `.source = None` to `.source = ''` which leads to an assertion error in ListField
+        - And who knows, that kind of horrors await me, if I just pass that object around! ;-)
+    """
+    return serializers.ListField(
+        **additional_params,
+        required=False, allow_null=True, default=list,
+        child = serializers.DictField(
+                    source=None,
+                    validators=[
+                        create_no_wrong_properties_validator({'value', 'id'}),
+                        create_mixed_types_validator({str, }, {str, int, None})
+                    ]   
+                )
+        )
+
+
 def create_zotero_keys_field(**additional_params: dict) -> serializers.ListField:
     """
     Define the field dynamically.
@@ -144,6 +166,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
     list = ListSerializerLimited(required=False, allow_null=True)
     deleted = serializers.BooleanField(default=False)
     secondaryLiterature = create_secondary_literature_field(source='person.secondary_literature')
+    gideonLegacyLiterature = create_gideon_legacy_literature_field(source='person.gideon_legacy_literature')
     zoteroKeysBy = create_zotero_keys_field(source='person.zotero_keys_by')
     zoteroKeysAbout = create_zotero_keys_field(source='person.zotero_keys_about')
 
@@ -191,6 +214,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "dateOfDeath": "date_of_death",
             "gender": "gender",
             "secondaryLiterature": "secondary_literature",
+            "gideonLegacyLiterature": "gideon_legacy_literature",
             "zoteroKeysBy": "zotero_keys_by",
             "zoteroKeysAbout": "zotero_keys_about",
         }
@@ -229,6 +253,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "deleted",
             "last_updated",
             "secondaryLiterature",
+            "gideonLegacyLiterature",
             "zoteroKeysBy",
             "zoteroKeysAbout",
         ]

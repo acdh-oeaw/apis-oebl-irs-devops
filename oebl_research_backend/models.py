@@ -58,6 +58,12 @@ class SecondaryLiterature(typing.TypedDict):
     pages: typing.Optional[str]
 
 
+class GideonLegacyLiterature(typing.Type):
+    """For defining the structure in the django json field. Just as a hint …"""
+    id: int
+    value: str
+
+
 class IRSPerson(models.Model):
     irs_person = models.ForeignKey(
         ResearchPerson, on_delete=models.SET_NULL, blank=True, null=True
@@ -77,6 +83,7 @@ class IRSPerson(models.Model):
     gender = models.CharField(max_length=10, blank=True, null=True, choices=CHOICES_GENDER)
     uris = ArrayField(models.URLField(), null=True, blank=True)
     secondary_literature: typing.List[SecondaryLiterature] = models.JSONField(default=list, null=True, blank=True)
+    gideon_legacy_literature: typing.List[GideonLegacyLiterature] = models.JSONField(default=list, null=True, blank=True)
     zotero_keys_by: typing.List[str] = ArrayField(base_field=models.TextField(), null=True, blank=True, default=list)
     """Literate by this person stored as zoteroKeys"""
     zotero_keys_about: typing.List[str] = ArrayField(base_field=models.TextField(), null=True, blank=True, default=list)

@@ -20,7 +20,7 @@ APIS_BASE_URI = "https://apis.acdh.oeaw.ac.at/"
 APIS_OEBL_BIO_COLLECTION = "ÖBL Biographie"
 
 
-FRONTEND_POST_FINISHED="http://frontend:8080/message/import-lemmas"
+#FRONTEND_POST_FINISHED="http://frontend:8080/message/import-lemmas"
 
 CSP_DEFAULT_SRC = ("'self'", 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 
                     'ajax.googleapis.com', 'cdn.rawgit.com', "*.acdh.oeaw.ac.at", "unpkg.com", "fonts.gstatic.com", 
@@ -30,7 +30,14 @@ CSP_FRAME_SRC = ('sennierer.github.io',)
 
 CORS_ORIGIN_WHITELIST = [
     'http://127.0.0.1:8080',
+    'https://oebl-research.acdh-dev.oeaw.ac.at'
 ]
+
+CORS_ALLOWED_ORIGINS = [
+    "https://oebl-research.acdh-dev.oeaw.ac.at",
+    "http://localhost:8080"
+]
+
 
 ALLOWED_HOSTS = re.sub(
     r"https?://",

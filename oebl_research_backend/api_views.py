@@ -1,4 +1,3 @@
-from typing_extensions import Required
 from numpy import require
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.mixins import DestroyModelMixin

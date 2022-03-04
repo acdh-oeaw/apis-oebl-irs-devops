@@ -39,7 +39,8 @@
 		"DATABASE_URL": "postgresql://postgres:postgres@db:5432/postgres",
 		"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C",
 		"OEBL_BROKER": "guest@rabbitmq",
-		"FRONTEND_POST_FINISHED": "http://frontend:8080/message/import-lemmas"
+		"FRONTEND_POST_FINISHED": "http://frontend:8080/message/import-lemmas",
+		"DJANGO_SETTINGS_MODULE": "apis.settings.dev"
 	},
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [

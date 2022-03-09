@@ -215,25 +215,25 @@ def get_wikipedia_entry(
         url_version_hist = f"https://de.wikipedia.org/w/index.php?title={url.split('/')[-1]}&offset=&limit=500&action=history"
         vers_hist_page = requests.get(url_version_hist)
         tree_vers_hist = html.fromstring(vers_hist_page.content)
-        vers_hist_entries = tree_vers_hist.xpath('//*[@id="pagehistory"]/li')
+        vers_hist_entries = tree_vers_hist.xpath('//*[@id="pagehistory"]/ul/li')
         count_vers = len(vers_hist_entries)
         count_editors = [
-            x.xpath('.//span[@class="history-user"]/a/bdi/text()')[0]
+            x.xpath('.//span[@class="history-user"]/a/@href')[0]
             for x in vers_hist_entries
         ]
         count_editors = len(list(dict.fromkeys(count_editors)))
         next_link = tree_vers_hist.xpath('//*[@id="mw-content-text"]/a[@rel="next"]')
         print(next_link)
-        while len(next_link) == 2:
+        while len(next_link) > 0:
             vers_hist_page = requests.get(
                 "https://de.wikipedia.org" + next_link[0].get("href")
             )
             print(vers_hist_page)
             tree_vers_hist = html.fromstring(vers_hist_page.content)
-            vers_hist_entries = tree_vers_hist.xpath('//*[@id="pagehistory"]/li')
+            vers_hist_entries = tree_vers_hist.xpath('//*[@id="pagehistory"]/ul/li')
             count_vers += len(vers_hist_entries)
             count_editors_1 = [
-                x.xpath('.//span[@class="history-user"]/a/bdi/text()')[0]
+                x.xpath('.//span[@class="history-user"]/a/@href')[0]
                 for x in vers_hist_entries
             ]
             count_editors += len(list(dict.fromkeys(count_editors_1)))

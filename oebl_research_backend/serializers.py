@@ -1,13 +1,13 @@
 from importlib.metadata import requires
 import secrets
 import typing
-from numpy import source
+from numpy import require, source
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from drf_spectacular.types import OpenApiTypes
 from typing import List as ListType
 
-from .models import ListEntry, List, SecondaryLiterature
+from .models import ListEntry, List, SecondaryLiterature, ProfessionGroup
 
 gndType = ListType[str]
 
@@ -155,6 +155,12 @@ class ListSerializerLimited(serializers.ModelSerializer):
         fields = ["id", "title", "editor"]
 
 
+class ProfessionGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProfessionGroup
+        fields = ["id", "name"]
+
+
 class ListEntrySerializer(serializers.ModelSerializer):
     gnd = serializers.SerializerMethodField(method_name="get_gnd")
     firstName = serializers.CharField(source="person.first_name")
@@ -169,6 +175,8 @@ class ListEntrySerializer(serializers.ModelSerializer):
     gideonLegacyLiterature = create_gideon_legacy_literature_field(source='person.gideon_legacy_literature')
     zoteroKeysBy = create_zotero_keys_field(source='person.zotero_keys_by')
     zoteroKeysAbout = create_zotero_keys_field(source='person.zotero_keys_about')
+    professionDetail = serializers.CharField(source='person.profession_detail')
+    professionGroup = ProfessionGroupSerializer(required=False, allow_null=True)
 
     def update(self, instance, validated_data):
         instance.selected = validated_data.get("selected", instance.selected)
@@ -217,6 +225,8 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "gideonLegacyLiterature": "gideon_legacy_literature",
             "zoteroKeysBy": "zotero_keys_by",
             "zoteroKeysAbout": "zotero_keys_about",
+            "professionDetail": "profession_detail",
+            "professeionGroup": "profession_group"
         }
         for pers_field, pers_map in pers_mapping.items():
             if pers_field in self.initial_data.keys():
@@ -256,4 +266,6 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "gideonLegacyLiterature",
             "zoteroKeysBy",
             "zoteroKeysAbout",
+            "professionDetail",
+            "professionGroup"
         ]

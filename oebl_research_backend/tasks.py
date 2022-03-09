@@ -327,12 +327,14 @@ def scrape(
     lst = List.objects.get(pk=list_id)
     for idx, ent in enumerate(obj["lemmas"]):
         if not update:
-            test_gnd = False
+            test_gnd = False #TODO: move to dedicated serializer function
             ent_dict = {
                 "first_name": ent.get("firstName", "-"),
                 "name": ent.get("lastName", "-"),
                 "date_of_birth": normalize_date(ent.get("dateOfBirth", None)),
                 "date_of_death": normalize_date(ent.get("dateOfDeath", None)),
+                "gender": ent.get("gender", None),
+                "alternative_names": ent.get("alternativeNames", []),
                 "uris": [],
             }
             if "gnd" in ent.keys():

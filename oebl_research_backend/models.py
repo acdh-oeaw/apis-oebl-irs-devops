@@ -65,6 +65,14 @@ class GideonLegacyLiterature(typing.Type):
 
 
 class IRSPerson(models.Model):
+    """IRSPerson Model
+
+    Args:
+        models (_type_): _description_
+
+    Returns:
+        IRSPersonModel instance
+    """    
     irs_person = models.ForeignKey(
         ResearchPerson, on_delete=models.SET_NULL, blank=True, null=True
     )

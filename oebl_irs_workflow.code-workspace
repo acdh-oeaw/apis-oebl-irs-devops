@@ -23,6 +23,18 @@
 				}
 			},
 			{
+				"name": "Runserver remote",
+				"type": "python",
+				"request": "launch",
+				"program": "${workspaceFolder}/manage.py",
+				"args": [
+					"runserver",
+					"0.0.0.0:8000",
+					"--settings=apis.settings.dev_remote_db"
+				],
+				"django": true,
+			},
+			{
 				"name": "Python: Django Migrate",
 				"type": "python",
 				"request": "launch",

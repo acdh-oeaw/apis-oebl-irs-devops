@@ -44,6 +44,9 @@ def get_attachements_path(instance: 'ListEntry', filename: str) -> str:
 class ProfessionGroup(models.Model):
     name = models.CharField(max_length=255)
 
+    def __str__(self):
+        return self.name
+
 
 class FullName(typing.TypedDict):
     """For defining the structure in the django json field. Just as a hint …"""

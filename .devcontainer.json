@@ -37,6 +37,7 @@
 	},
 	"remoteEnv": {
 		"DATABASE_URL": "postgresql://postgres:postgres@db:5432/postgres",
+		"DATABASE_REMOTE_URL": "postgresql://oebl_irs_staging:gh3KluRd04H9@db:5433/oebl_irs_staging",
 		"FRONTEND_CORS_TOKEN": "s49DsDzfeJRJDwuHyWu4aY13dZnEk43C",
 		"OEBL_BROKER": "guest@rabbitmq",
 		"FRONTEND_POST_FINISHED": "http://frontend:8080/message/import-lemmas",
@@ -46,7 +47,8 @@
 	"extensions": [
 		"ms-python.python",
 		"mtxr.sqltools",
-		"mtxr.sqltools-driver-pg"
+		"mtxr.sqltools-driver-pg",
+		"njpwerner.autodocstring"
 	],
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
 	"forwardPorts": [

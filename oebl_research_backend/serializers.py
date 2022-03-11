@@ -1,7 +1,6 @@
 from importlib.metadata import requires
 import secrets
 import typing
-from typing_extensions import Required
 from numpy import require, source
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field

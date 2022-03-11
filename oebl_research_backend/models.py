@@ -86,6 +86,7 @@ class IRSPerson(models.Model):
     profession_group = models.ForeignKey(ProfessionGroup, blank=True, null=True, on_delete=SET_NULL)
     profession_detail = models.CharField(max_length=255, null=True, blank=True)
     bio_note = models.TextField(blank=True, null=True)
+    kinship = models.TextField(blank=True, null=True)
     religion = models.CharField(max_length=255, blank=True, null=True)
     title_of_nobility = models.CharField(max_length=255, blank=True, null=True)
     gender = models.CharField(max_length=10, blank=True, null=True, choices=CHOICES_GENDER)

@@ -1,6 +1,7 @@
 from importlib.metadata import requires
 import secrets
 import typing
+from typing_extensions import Required
 from numpy import require, source
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
@@ -169,6 +170,9 @@ class ListEntrySerializer(serializers.ModelSerializer):
     gender = serializers.CharField(source="person.gender")
     dateOfBirth = serializers.DateField(source="person.date_of_birth")
     dateOfDeath = serializers.DateField(source="person.date_of_death")
+    bioNote = serializers.CharField(source="person.bio_note", required=False, allow_null=True)
+    kinship = serializers.CharField(source="person.kinship", required=False, allow_null=True)
+    religion = serializers.CharField(source="person.religion", required=False, allow_null=True)
     list = ListSerializerLimited(required=False, allow_null=True)
     deleted = serializers.BooleanField(default=False)
     secondaryLiterature = create_secondary_literature_field(source='person.secondary_literature')
@@ -226,7 +230,10 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "zoteroKeysBy": "zotero_keys_by",
             "zoteroKeysAbout": "zotero_keys_about",
             "professionDetail": "profession_detail",
-            "professeionGroup": "profession_group"
+            "professeionGroup": "profession_group",
+            "bioNote": "bio_note",
+            "kinship": "kinship",
+            "religion": "religion"
         }
         for pers_field, pers_map in pers_mapping.items():
             if pers_field in self.initial_data.keys():
@@ -267,5 +274,8 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "zoteroKeysBy",
             "zoteroKeysAbout",
             "professionDetail",
-            "professionGroup"
+            "professionGroup",
+            "bioNote",
+            "kinship",
+            "religion"
         ]

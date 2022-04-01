@@ -61,7 +61,7 @@ class SecondaryLiterature(typing.TypedDict):
     pages: typing.Optional[str]
 
 
-class GideonLegacyLiterature(typing.Type):
+class GideonLegacyLiterature(typing.TypedDict):
     """For defining the structure in the django json field. Just as a hint …"""
     id: int
     value: str

@@ -163,12 +163,12 @@ class ProfessionGroupSerializer(serializers.ModelSerializer):
 
 class ListEntrySerializer(serializers.ModelSerializer):
     gnd = serializers.SerializerMethodField(method_name="get_gnd")
-    firstName = serializers.CharField(source="person.first_name")
+    firstName = serializers.CharField(source="person.first_name", required=False, allow_null=True)
     lastName = serializers.CharField(source="person.name")
     alternativeNames = create_alternative_names_field(source='person.alternative_names')
-    gender = serializers.CharField(source="person.gender")
-    dateOfBirth = serializers.DateField(source="person.date_of_birth")
-    dateOfDeath = serializers.DateField(source="person.date_of_death")
+    gender = serializers.CharField(source="person.gender", required=False, allow_null=True)
+    dateOfBirth = serializers.DateField(source="person.date_of_birth", required=False, allow_null=True)
+    dateOfDeath = serializers.DateField(source="person.date_of_death", required=False, allow_null=True)
     bioNote = serializers.CharField(source="person.bio_note", required=False, allow_null=True)
     kinship = serializers.CharField(source="person.kinship", required=False, allow_null=True)
     religion = serializers.CharField(source="person.religion", required=False, allow_null=True)
@@ -178,7 +178,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
     gideonLegacyLiterature = create_gideon_legacy_literature_field(source='person.gideon_legacy_literature')
     zoteroKeysBy = create_zotero_keys_field(source='person.zotero_keys_by')
     zoteroKeysAbout = create_zotero_keys_field(source='person.zotero_keys_about')
-    professionDetail = serializers.CharField(source='person.profession_detail')
+    professionDetail = serializers.CharField(source='person.profession_detail', required=False, allow_null=True)
     professionGroup = ProfessionGroupSerializer(required=False, allow_null=True)
 
     def update(self, instance, validated_data):

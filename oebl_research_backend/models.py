@@ -100,6 +100,8 @@ class IRSPerson(models.Model):
     """Literate by this person stored as zoteroKeys"""
     zotero_keys_about: typing.List[str] = ArrayField(base_field=models.TextField(), null=True, blank=True, default=list)
     """Literate about this person stored as zoteroKeys"""
+    notes = models.TextField(null=True, blank=True)
+    """A field to add additional iformation to be shared, that do not fit in the main data model."""
 
     def __str__(self):
         return f"{self.name}, {self.first_name}"

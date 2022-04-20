@@ -180,6 +180,7 @@ class ListEntrySerializer(serializers.ModelSerializer):
     zoteroKeysAbout = create_zotero_keys_field(source='person.zotero_keys_about')
     professionDetail = serializers.CharField(source='person.profession_detail', required=False, allow_null=True)
     professionGroup = ProfessionGroupSerializer(required=False, allow_null=True)
+    notes = serializers.CharField(source='person.notes', required = False, allow_null = True)
 
     def update(self, instance, validated_data):
         instance.selected = validated_data.get("selected", instance.selected)
@@ -232,7 +233,8 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "professeionGroup": "profession_group",
             "bioNote": "bio_note",
             "kinship": "kinship",
-            "religion": "religion"
+            "religion": "religion",
+            "notes": "notes",
         }
         for pers_field, pers_map in pers_mapping.items():
             if pers_field in self.initial_data.keys():
@@ -276,5 +278,6 @@ class ListEntrySerializer(serializers.ModelSerializer):
             "professionGroup",
             "bioNote",
             "kinship",
-            "religion"
+            "religion",
+            "notes",
         ]

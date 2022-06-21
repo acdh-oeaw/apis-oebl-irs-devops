@@ -79,8 +79,8 @@ class IRSPerson(models.Model):
     irs_person = models.ForeignKey(
         ResearchPerson, on_delete=models.SET_NULL, blank=True, null=True
     )
-    name = models.CharField(max_length=255, blank=True, null=True)
-    first_name = models.CharField(max_length=255, blank=True, null=True)
+    name = models.CharField(max_length=255, blank=False, null=False, default='')
+    first_name = models.CharField(max_length=255, blank=False, null=False, default='')
     alternative_names: typing.List[FullName] = models.JSONField(default=list, null=True, blank=True)
     date_of_birth = models.DateField(blank=True, null=True)
     date_of_birth_modifier = models.CharField(max_length=5, null=True, blank=True, choices=CHOICES_DATE_MODIFIER)

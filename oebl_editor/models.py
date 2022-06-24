@@ -19,7 +19,7 @@ class LemmaArticle(models.Model):
     current_version = models.OneToOneField(
         'LemmaArticleVersion',
         on_delete=models.CASCADE,
-        null=False,  # An article can not be empty. The current version contains the data
+        null=True,  # An article can not be empty at cre<tion time
     )
 
 

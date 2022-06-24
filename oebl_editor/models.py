@@ -42,7 +42,7 @@ class LemmaArticleVersion(models.Model):
     """
 
 
-class Permission(models.TextChoices):
+class EditTypes(models.TextChoices):
 
     """Custom permision system for LemmaArticles"""
     VIEW = ('VIEW', 'VIEW')
@@ -74,10 +74,10 @@ class AbstractUserArticlePermissionMapping(models.Model):
         null=False,
     )
 
-    permission = models.CharField(
-        choices=Permission.choices,
+    edit_type = models.CharField(
+        choices=EditTypes.choices,
         null=False,
-        max_length=max((choice_tuple[1].__len__() for choice_tuple in Permission.choices))
+        max_length=max((choice_tuple[1].__len__() for choice_tuple in EditTypes.choices))
     )
 
 

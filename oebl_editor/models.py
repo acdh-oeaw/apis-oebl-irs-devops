@@ -1,4 +1,5 @@
 from django.db import models
+from oebl_editor.markup import EditorDocument
 
 from oebl_irs_workflow.models import IrsUser, IssueLemma
 
@@ -36,15 +37,14 @@ class LemmaArticleVersion(models.Model):
     date_created = models.DateTimeField(auto_created=True)
     date_modified = models.DateTimeField(auto_created=True, auto_now=True)
 
-    markup = models.JSONField(null=False)
+    markup: EditorDocument = models.JSONField(null=False)
     """This markup will be using the frontends editor markup to json translation from https://tiptap.dev/api/editor#get-json ,
     using a lot of additional plugins that generate different annotations like comments and linked data.
     """
 
 
 class EditTypes(models.TextChoices):
-
-    """Custom permision system for LemmaArticles"""
+    """Custom edit type system for LemmaArticles"""
     VIEW = ('VIEW', 'VIEW')
     COMMENT = ('COMMENT', 'COMMENT')
     ANNOTATE = ('ANNOTATE', 'ANNOTATE')
@@ -52,14 +52,13 @@ class EditTypes(models.TextChoices):
     """With `WRITE` including all other permission"""
 
 
-class AbstractUserArticlePermissionMapping(models.Model):
-
+class AbstractUserArticleEditTypeMapping(models.Model):
     """Map permissions to users and articles."""
     class Meta:
         abstract = True
         
     lemma_article = models.ForeignKey(
-        IssueLemma,
+        LemmaArticle,
         # When the issue lemma is deleted, the permission has no meaning.
         on_delete=models.CASCADE,
         unique=False,   # One article can have multiple user permissions.
@@ -81,11 +80,11 @@ class AbstractUserArticlePermissionMapping(models.Model):
     )
 
 
-class UserArticlePermission(AbstractUserArticlePermissionMapping):
+class UserArticlePermission(AbstractUserArticleEditTypeMapping):
     """Manage custom article permission for users."""
     pass
 
 
-class UserArticleAssignment(AbstractUserArticlePermissionMapping):
+class UserArticleAssignment(AbstractUserArticleEditTypeMapping):
     """Manage user assignments for users"""
     pass

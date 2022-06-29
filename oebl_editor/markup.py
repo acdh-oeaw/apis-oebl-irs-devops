@@ -75,8 +75,7 @@ This is json data from a example document, which shows – the data structure is
 }
 """
 from typing import List, TypedDict, Literal, Dict, Optional, Union
-
-from tomlkit import datetime
+from datetime import datetime
 
 
 class AbstractBaseNode(TypedDict):
@@ -90,12 +89,15 @@ CommentTagName = Literal['comment']
 
 MarkTagName = Union[AnnotationTagName, CommentTagName]
 
+
 class AbstractMarkNode(AbstractBaseNode):
     type: MarkTagName
+
 
 class AnnotationAttributes(TypedDict):
     """TODO: Define with front end"""
     entityId: Optional[str]
+
 
 class AnnotationNode(AbstractMarkNode):
     type: AnnotationTagName
@@ -108,10 +110,12 @@ class CommentAttributes(TypedDict):
     dateCreated: datetime
     dateModified: datetime
     text: str
+
     
 class CommentNode(AbstractMarkNode):
     type: CommentTagName
     attrs: CommentAttributes
+
     
 class AbstractMarkableBaseNode(AbstractBaseNode):
     marks: Optional[List[Union[AnnotationNode, CommentNode]]]
@@ -120,24 +124,16 @@ class AbstractMarkableBaseNode(AbstractBaseNode):
 class ParagraphNode(AbstractMarkableBaseNode):
     type: Literal['paragraph']
 
+
 class TextNode(AbstractMarkableBaseNode):
     type: Literal['text']
     text: str
+
     
 class HeadingNode(TextNode):
     type: Literal['heading']
 
+
 class EditorDocument(AbstractBaseNode):
-    type: Literal['doc']    
-
+    type: Literal['doc']
     
-
-    
-    
-    
-    
-    
-        
-
-
-

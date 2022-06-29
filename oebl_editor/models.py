@@ -1,5 +1,6 @@
+from typing import Dict
 from django.db import models
-from oebl_editor.markup import EditorDocument
+from oebl_editor.markup import EditorDocument, MarkTagName
 
 from oebl_irs_workflow.models import IrsUser, IssueLemma
 
@@ -50,6 +51,16 @@ class EditTypes(models.TextChoices):
     ANNOTATE = ('ANNOTATE', 'ANNOTATE')
     WRITE = ('WRITE', 'WRITE')
     """With `WRITE` including all other permission"""
+    
+    
+node_edit_type_mapping: Dict[
+            EditTypes,
+            MarkTagName,
+        ] = {
+        EditTypes.COMMENT: 'comment',
+        EditTypes.ANNOTATE: 'annotation'
+}
+"""This maps the edit types in the database to node types in the markdown"""     
 
 
 class AbstractUserArticleEditTypeMapping(models.Model):

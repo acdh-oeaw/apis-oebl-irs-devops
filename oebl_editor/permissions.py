@@ -2,10 +2,12 @@
 
 The Logic is defined in the serializers modules. Here are the uttility functions.
 """
+from abc import ABC
 from typing import Literal, Set, Union
 from django.db.models.query import QuerySet
 from django.contrib.auth.models import User
-from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, get_last_version
+from black import abstractmethod
+from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, filter_queryset_by_user_permissions, get_last_version
 from rest_framework import permissions
 from rest_framework.request import Request
 from oebl_editor.models import EditTypes, LemmaArticleVersion, UserArticlePermission, node_edit_type_mapping
@@ -81,3 +83,26 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
         )
         
         return check_if_docs_diff_regarding_mark_types(prohibited_node_types, new_version, last_version)
+
+
+
+class AbstractUserPermissionViewSetMixin(ABC):
+    
+    @abstractmethod
+    def get_naive_query_set(self) -> QuerySet:
+        """Get the query set without knowing the user"""
+        raise NotImplementedError()
+    
+    def get_queryset(self) -> QuerySet:
+        return filter_queryset_by_user_permissions(self.request.user, self.get_naive_query_set())
+    
+    
+    
+class AbstractReadOnlyPermissionViewSetMixin(AbstractUserPermissionViewSetMixin, ABC):
+    
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve', ):
+            return [permissions.IsAuthenticated(), ]
+        else:
+            return [permissions.IsAdminUser(), ]
+    

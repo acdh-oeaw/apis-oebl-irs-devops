@@ -1,8 +1,9 @@
 from itertools import zip_longest
 from typing import Generator, Optional, Set
+from django.contrib.auth.models import User
 from django.db.models.query import QuerySet
 from rest_framework.exceptions import NotFound
-from oebl_editor.models import EditTypes, LemmaArticleVersion
+from oebl_editor.models import EditTypes, LemmaArticleVersion, UserArticlePermission
 from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
 
 
@@ -73,4 +74,12 @@ def check_if_docs_diff_regarding_mark_types(
                 return False
             
     return True
+
+
+def filter_queryset_by_user_permissions(user: User, query_set: QuerySet) -> QuerySet:
+    if user.is_superuser:
+        return query_set
+    return query_set.filter(
+            lemma_article__in = UserArticlePermission.objects.filter(user = user, )
+        )
     

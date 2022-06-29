@@ -1,7 +1,5 @@
 from django.db.models.query import QuerySet
-from aiohttp import request
 from oebl_editor.permissions import AbstractReadOnlyPermissionViewSetMixin, AbstractUserPermissionViewSetMixin, LemmaArticleVersionPermissions
-from oebl_editor.queries import filter_queryset_by_user_permissions
 from rest_framework import viewsets
 from rest_framework import permissions
 from oebl_editor.serializers import LemmaArticleSerializer, LemmaArticleVersionSerializer, UserArticlePermissionSerializer, UserArticleAssignmentSerializer

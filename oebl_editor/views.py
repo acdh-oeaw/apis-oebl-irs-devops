@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from django.db.models.query import QuerySet
 
 
-class LemmaArticleViewSet(viewsets.ModelViewSet, AbstractReadOnlyPermissionViewSetMixin):
+class LemmaArticleViewSet(AbstractUserPermissionViewSetMixin, AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
     
     serializer_class = LemmaArticleSerializer
     
@@ -18,7 +18,7 @@ class LemmaArticleViewSet(viewsets.ModelViewSet, AbstractReadOnlyPermissionViewS
         return LemmaArticle.objects.get_queryset()
         
     
-class LemmaArticleVersionViewSet(viewsets.ModelViewSet, AbstractUserPermissionViewSetMixin):
+class LemmaArticleVersionViewSet(AbstractUserPermissionViewSetMixin, viewsets.ModelViewSet):
     
     serializer_class = LemmaArticleVersionSerializer
     permission_classes = [permissions.IsAuthenticated, LemmaArticleVersionPermissions]
@@ -27,7 +27,7 @@ class LemmaArticleVersionViewSet(viewsets.ModelViewSet, AbstractUserPermissionVi
         return LemmaArticleVersion.objects.get_queryset()
     
     
-class UserArticlePermissionViewSet(viewsets.ModelViewSet, AbstractUserPermissionViewSetMixin):
+class UserArticlePermissionViewSet(AbstractUserPermissionViewSetMixin, AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
     
     serializer_class = UserArticlePermissionSerializer
     
@@ -35,7 +35,7 @@ class UserArticlePermissionViewSet(viewsets.ModelViewSet, AbstractUserPermission
         return UserArticlePermission.objects.get_queryset()    
     
     
-class UserArticleAssignmentViewSet(viewsets.ModelViewSet, AbstractUserPermissionViewSetMixin):
+class UserArticleAssignmentViewSet(AbstractUserPermissionViewSetMixin, AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
     
     serializer_class = UserArticleAssignmentSerializer
     

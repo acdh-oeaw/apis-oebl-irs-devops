@@ -102,7 +102,7 @@ class AbstractUserPermissionViewSetMixin(ABC):
     
     
     
-class AbstractReadOnlyPermissionViewSetMixin(AbstractUserPermissionViewSetMixin, ABC):
+class AbstractReadOnlyPermissionViewSetMixin(ABC):
     
     def get_permissions(self):
         if self.action in ('list', 'retrieve', ):

@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from oebl_editor.markup import EditorDocument
 
-def create_a_document() -> 'EditorDocument':
+def create_a_document(
+    number_of_annoations: int = 1,
+    comment_text: str = 'comment_text'
+    ) -> 'EditorDocument':
     return {
   "type": "doc",
   "content": [
@@ -27,10 +30,11 @@ def create_a_document() -> 'EditorDocument':
         {
           "type": "text",
           "marks": [
-            {
+              {
               "type": "annotation",
               "attrs": {}
             }
+            for _ in range(number_of_annoations)
           ],
           "text": "Annotation"
         }
@@ -58,7 +62,9 @@ def create_a_document() -> 'EditorDocument':
           "marks": [
             {
               "type": "comment",
-              "attrs": {}
+              "attrs": {
+                  'text': comment_text,
+              }
             }
           ],
           "text": "Kommentar"
@@ -67,3 +73,5 @@ def create_a_document() -> 'EditorDocument':
     },
   ]
 }
+    
+    

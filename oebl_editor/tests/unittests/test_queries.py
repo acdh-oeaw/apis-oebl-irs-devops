@@ -212,11 +212,13 @@ class TestDocDiff(TestCase):
             )
             
             
-class VersionQueryTestCase(DjangoTestCase):
+class TwoVersionQueryTestCase(DjangoTestCase):
     
     def setUp(self) -> None:
-        self.article = createLemmaArticle()
-        self.version_1, self.version_2 = tuple(VersionGenerator.add_two_versions_to_article(self.article))
+        article = createLemmaArticle()
+        version_generator = VersionGenerator()
+        version_generator.add_versions_to_article(article, n=2)
+        self.version_1, self.version_2 = version_generator.versions
         
     def test_query_last_version_with_no_update(self):
         version = get_last_version(self.version_2, update=False)

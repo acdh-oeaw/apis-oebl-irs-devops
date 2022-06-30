@@ -1,7 +1,7 @@
 
 
 from datetime import datetime, timedelta
-from typing import Generator
+from typing import List
 from oebl_editor.models import LemmaArticleVersion, LemmaArticle
 from oebl_editor.tests.utilitites.markup import create_a_document
 from oebl_irs_workflow.models import IssueLemma
@@ -22,20 +22,25 @@ def createLemmaArticle() -> LemmaArticle:
 
 class VersionGenerator:
 
-    date_created_1 = datetime(2000, 12, 12, 12, 12, 12)
-    date_created_2 = date_created_1 + timedelta(minutes=30)
+    def __init__(self) -> None:    
+        self.timedelta_between_dates = timedelta(minutes=30)
+        self.first_date = datetime(2000, 12, 12, 12, 12, 12)
+        self.dates: List[datetime] = []
+        self.versions: List[LemmaArticleVersion]
 
-    @classmethod
-    def add_two_versions_to_article(cls, article: LemmaArticle) -> Generator[LemmaArticleVersion, None, None]:
-        for date in (cls.date_created_1, cls.date_created_2):
+    def add_versions_to_article(self, article: LemmaArticle, n: int):
+        self.dates = []
+        self.versions = []
+        date = self.first_date
+        for _ in range(n):
             version = LemmaArticleVersion(
                 lemma_article = article,
                 date_created = date,
                 date_modified = date,
                 markup = create_a_document(),
             )
-            
             version.save()
-            yield version
-    
+            date += self.timedelta_between_dates
+            self.versions.append(version)
+            self.dates.append(date)    
     

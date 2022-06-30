@@ -4,8 +4,9 @@ Test oebl_editor.queries
 
 from typing import TYPE_CHECKING
 from unittest import TestCase, result
+from oebl_editor.models import EditTypes
 
-from oebl_editor.queries import extract_marks_flat
+from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, extract_marks_flat
 from oebl_editor.tests.utilitites.markup import create_a_document
 
 if TYPE_CHECKING:
@@ -114,5 +115,33 @@ class TestExtractMarksFlat(TestCase):
         self.assertEqual(comments.__len__(), 1)
 
          
+         
+class TestDocDiff(TestCase):
         
-        
+        def test_no_changes(self):
+            doc1 = create_a_document()
+            doc2 = create_a_document()
+            
+            annotate_diff = check_if_docs_diff_regarding_mark_types(
+                {EditTypes.ANNOTATE, },
+                doc1,
+                doc2,
+            )
+            
+            self.assertFalse(annotate_diff)
+            
+            comment_diff = check_if_docs_diff_regarding_mark_types(
+                {EditTypes.COMMENT, },
+                doc1,
+                doc2,
+            )
+            
+            self.assertFalse(comment_diff)
+            
+            any_diff = check_if_docs_diff_regarding_mark_types(
+                {EditTypes.ANNOTATE, EditTypes.COMMENT},
+                doc1,
+                doc2,
+            )
+            
+            self.assertFalse(any_diff)

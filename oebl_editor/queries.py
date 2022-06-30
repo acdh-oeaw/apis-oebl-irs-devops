@@ -70,16 +70,16 @@ def check_if_docs_diff_regarding_mark_types(
         for old_mark, new_mark in zip_longest(
           extract_marks_flat(doc2, mark_type),
           extract_marks_flat(doc1, mark_type),
-          None,
+          fillvalue=None,
         ):
             # Something has terribly gone wrong.
             if (old_mark is None) and (new_mark is None):
                 raise Exception
             # If mark has changed, it differs
             if old_mark != new_mark:
-                return False
+                return True
             
-    return True
+    return False
 
 
 def filter_queryset_by_user_permissions(user: 'User', query_set: 'QuerySet') -> 'QuerySet':

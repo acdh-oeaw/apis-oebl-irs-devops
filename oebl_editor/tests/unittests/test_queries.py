@@ -157,3 +157,55 @@ class TestDocDiff(TestCase):
                     doc2
                 )
             )
+            
+        def test_changed_comment(self):
+            doc1 = create_a_document(comment_text='Comment 1')
+            doc2 = create_a_document(comment_text='Comment 2')
+            
+            self.assertTrue(
+                check_if_docs_diff_regarding_mark_types(
+                    {'comment', },
+                    doc1,
+                    doc2
+                )
+            )
+            
+        def test_for_annotations_with_changed_comment(self):
+            """Just to be sure"""
+            doc1 = create_a_document(comment_text='Comment 1')
+            doc2 = create_a_document(comment_text='Comment 2')
+            
+            self.assertFalse(
+                check_if_docs_diff_regarding_mark_types(
+                    {'annotation', },
+                    doc1,
+                    doc2
+                )
+            )
+            
+        def test_for_all_with_one_change(self):
+            """Just to be sure"""
+            doc1 = create_a_document(comment_text='Comment 1')
+            doc2 = create_a_document(comment_text='Comment 2')
+            
+            self.assertTrue(
+                check_if_docs_diff_regarding_mark_types(
+                    {'annotation', 'comment'},
+                    doc1,
+                    doc2
+                )
+            )
+            
+        def test_all_with_changes(self):
+            """Just to be sure"""
+            doc1 = create_a_document(comment_text='Comment 1', number_of_annotations=0)
+            doc2 = create_a_document(comment_text='Comment 2', number_of_annotations=2)
+            
+            self.assertTrue(
+                check_if_docs_diff_regarding_mark_types(
+                    {'annotation', 'comment'},
+                    doc1,
+                    doc2
+                )
+            )
+        

@@ -5,8 +5,10 @@ Test oebl_editor.queries
 from pydoc import doc
 from typing import TYPE_CHECKING
 from unittest import TestCase, result
+from django.test import TestCase as DjangoTestCase
 
-from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, extract_marks_flat
+from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, extract_marks_flat, get_last_version
+from oebl_editor.tests.utilitites.db_content import VersionGenerator, createLemmaArticle
 from oebl_editor.tests.utilitites.markup import create_a_document
 
 if TYPE_CHECKING:
@@ -208,4 +210,18 @@ class TestDocDiff(TestCase):
                     doc2
                 )
             )
+            
+            
+class VersionQueryTestCase(DjangoTestCase):
+    
+    def setUp(self) -> None:
+        self.article = createLemmaArticle()
+        self.version_1, self.version_2 = tuple(VersionGenerator.add_two_versions_to_article(self.article))
         
+    def test_query_last_version_with_no_update(self):
+        version = get_last_version(self.version_2, update=False)
+        self.assertEqual(version, self.version_1)
+        
+    def test_query_last_version_with_update(self):
+        version = get_last_version(self.version_2, update=True)
+        self.assertEqual(version, self.version_2)

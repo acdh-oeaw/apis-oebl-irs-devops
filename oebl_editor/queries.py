@@ -21,10 +21,8 @@ def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -
         query = query.filter(pk=lemma_article_version.pk)
     else:
         query = query.filter(
-        lemma_article = lemma_article_version.lemma_article
-        ).order_by(
-            field_names=['date_modified'],
-        )
+            lemma_article = lemma_article_version.lemma_article
+        ).order_by('date_modified')
         
     last_version = query.first()
     

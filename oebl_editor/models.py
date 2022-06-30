@@ -32,7 +32,7 @@ class LemmaArticle(models.Model):
 class LemmaArticleVersion(models.Model):
     """Represents a version of an artical at a time"""
     lemma_article = models.ForeignKey(
-        IssueLemma,
+        LemmaArticle,
         # When the issue lemma is deleted, the article has no meaning.
         on_delete=models.CASCADE,
         unique=False,   # One article can have multiple versions.

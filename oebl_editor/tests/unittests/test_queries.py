@@ -57,6 +57,17 @@ class TestExtractMarksFlat(TestCase):
         result2 = list(extract_marks_flat(node, mark_type_2))
         self.assertEqual(result2, [mark2, ])
         
+        self.assertTrue(
+            all(
+                (mark['type'] == mark_type_1 for mark in result1)
+            )
+        )
+        
+        self.assertTrue(
+            all(
+                (mark['type'] == mark_type_2 for mark in result2)
+            )
+        )
         
     def test_mixed_nested(self):
         mark_type_1 = 'mark_type_1'
@@ -81,6 +92,18 @@ class TestExtractMarksFlat(TestCase):
         
         result2 = list(extract_marks_flat(parent_node, mark_type_2))
         self.assertEqual(result2, [mark2, ])
+        
+        self.assertTrue(
+            all(
+                (mark['type'] == mark_type_1 for mark in result1)
+            )
+        )
+        
+        self.assertTrue(
+            all(
+                (mark['type'] == mark_type_2 for mark in result2)
+            )
+        )
         
         
     def test_copy_of_real_doc(self):

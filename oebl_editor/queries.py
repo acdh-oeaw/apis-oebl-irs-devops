@@ -45,9 +45,11 @@ def extract_marks_flat(node: 'AbstractBaseNode', tag_name: 'MarkTagName') -> Gen
     Yields:
         Generator[AbstractMarkNode, None, None]: Yields marks
     """
+    mark: 'AbstractMarkNode'
     for mark in node.get('marks', []):
-        if mark.type == tag_name:
+        if mark['type'] == tag_name:
             yield mark
+    child_node: 'AbstractBaseNode'
     for child_node in  node.get('content', []):
         yield from extract_marks_flat(child_node, tag_name)
 

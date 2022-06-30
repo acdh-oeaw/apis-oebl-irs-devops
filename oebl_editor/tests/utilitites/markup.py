@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from oebl_editor.markup import EditorDocument
 
 def create_a_document(
-    number_of_annoations: int = 1,
+    number_of_annotations: int = 1,
     comment_text: str = 'comment_text'
     ) -> 'EditorDocument':
     return {
@@ -34,7 +34,7 @@ def create_a_document(
               "type": "annotation",
               "attrs": {}
             }
-            for _ in range(number_of_annoations)
+            for _ in range(number_of_annotations)
           ],
           "text": "Annotation"
         }

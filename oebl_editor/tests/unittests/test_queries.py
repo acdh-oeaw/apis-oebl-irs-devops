@@ -73,7 +73,7 @@ class TestExtractMarksFlat(TestCase):
         mark_type_1 = 'mark_type_1'
         mark_type_2 = 'mark_type_2'
         
-        mark1, mark2, mark3 = marks = [{'type': mark_type_1, 'text': 'mark1'}, {'type': mark_type_2, 'text': 'mark2'}, {'type': mark_type_1, 'text': 'mark3'}]
+        mark1, mark2, mark3 = [{'type': mark_type_1, 'text': 'mark1'}, {'type': mark_type_2, 'text': 'mark2'}, {'type': mark_type_1, 'text': 'mark3'}]
         parent_node: 'AbstractBaseNode' = {
             'type': 'paragraph',
             'marks': [mark1, ],

@@ -2,9 +2,9 @@
 Test oebl_editor.queries
 """
 
+from pydoc import doc
 from typing import TYPE_CHECKING
 from unittest import TestCase, result
-from oebl_editor.models import EditTypes
 
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, extract_marks_flat
 from oebl_editor.tests.utilitites.markup import create_a_document
@@ -123,7 +123,7 @@ class TestDocDiff(TestCase):
             doc2 = create_a_document()
             
             annotate_diff = check_if_docs_diff_regarding_mark_types(
-                {EditTypes.ANNOTATE, },
+                {'annotation', },
                 doc1,
                 doc2,
             )
@@ -131,7 +131,7 @@ class TestDocDiff(TestCase):
             self.assertFalse(annotate_diff)
             
             comment_diff = check_if_docs_diff_regarding_mark_types(
-                {EditTypes.COMMENT, },
+                {'comment', },
                 doc1,
                 doc2,
             )
@@ -139,9 +139,21 @@ class TestDocDiff(TestCase):
             self.assertFalse(comment_diff)
             
             any_diff = check_if_docs_diff_regarding_mark_types(
-                {EditTypes.ANNOTATE, EditTypes.COMMENT},
+                {'annotation', 'comment', },
                 doc1,
                 doc2,
             )
             
             self.assertFalse(any_diff)
+            
+        def test_added_annotation(self):
+            doc1 = create_a_document(number_of_annotations=1)
+            doc2 = create_a_document(number_of_annotations=2)
+            
+            self.assertTrue(
+                check_if_docs_diff_regarding_mark_types(
+                    {'annotation', },
+                    doc1,
+                    doc2
+                )
+            )

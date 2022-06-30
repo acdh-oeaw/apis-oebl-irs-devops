@@ -6,9 +6,7 @@ from oebl_editor.models import LemmaArticleVersion, UserArticlePermission
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from django.contrib.auth.models import User
-    from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
-    from oebl_editor.models import EditTypes
-    
+    from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName    
 
 
 def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -> Optional[LemmaArticleVersion]:
@@ -55,7 +53,7 @@ def extract_marks_flat(node: 'AbstractBaseNode', tag_name: 'MarkTagName') -> Gen
 
 
 def check_if_docs_diff_regarding_mark_types(
-        mark_types: Set['EditTypes'],
+        mark_types: Set['MarkTagName'],
         doc1: 'EditorDocument',
         doc2: 'EditorDocument',
     ) -> bool:

@@ -1,8 +1,12 @@
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 from django.db import models
-from oebl_editor.markup import EditorDocument, MarkTagName
 
 from oebl_irs_workflow.models import IrsUser, IssueLemma
+
+if TYPE_CHECKING:
+    from oebl_editor.markup import EditorDocument, MarkTagName
+    
+    
 
 
 class LemmaArticle(models.Model):
@@ -21,7 +25,7 @@ class LemmaArticle(models.Model):
     current_version = models.OneToOneField(
         'LemmaArticleVersion',
         on_delete=models.CASCADE,
-        null=True,  # An article can not be empty at cre<tion time
+        null=True,  # An article can not be empty at creation time
     )
 
 
@@ -38,7 +42,7 @@ class LemmaArticleVersion(models.Model):
     date_created = models.DateTimeField(auto_created=True)
     date_modified = models.DateTimeField(auto_created=True, auto_now=True)
 
-    markup: EditorDocument = models.JSONField(null=False)
+    markup: 'EditorDocument' = models.JSONField(null=False)
     """This markup will be using the frontends editor markup to json translation from https://tiptap.dev/api/editor#get-json ,
     using a lot of additional plugins that generate different annotations like comments and linked data.
     """
@@ -55,7 +59,7 @@ class EditTypes(models.TextChoices):
     
 node_edit_type_mapping: Dict[
             EditTypes,
-            MarkTagName,
+            'MarkTagName',
         ] = {
         EditTypes.COMMENT: 'comment',
         EditTypes.ANNOTATE: 'annotation'

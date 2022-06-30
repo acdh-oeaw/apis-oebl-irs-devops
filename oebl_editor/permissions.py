@@ -2,22 +2,26 @@
 
 The Logic is defined in the serializers modules. Here are the uttility functions.
 """
-from abc import ABC
-from typing import Literal, Set, Union
-from django.db.models.query import QuerySet
-from django.contrib.auth.models import User
-from black import abstractmethod
-from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, filter_queryset_by_user_permissions, get_last_version
+from abc import ABC, abstractmethod
+from typing import Literal, Set, Union, TYPE_CHECKING
 from rest_framework import permissions
-from rest_framework.request import Request
-from oebl_editor.models import EditTypes, LemmaArticleVersion, UserArticlePermission, node_edit_type_mapping
+from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, filter_queryset_by_user_permissions, get_last_version
+from oebl_editor.models import EditTypes, UserArticlePermission, node_edit_type_mapping
+    
+    
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+    from django.contrib.auth.models import User
+    from rest_framework.request import Request
+    from oebl_editor.models import LemmaArticleVersion
+
     
 
 class LemmaArticleVersionPermissions(permissions.BasePermission):
     """Who can get, post, patch and delete an LemmaArticleVersion
     """
     
-    def has_object_permission(self, request: Request, view, obj: LemmaArticleVersion) -> bool:
+    def has_object_permission(self, request: 'Request', view, obj: 'LemmaArticleVersion') -> bool:
         """
         Custom Business Logic For Editor Changes
         
@@ -26,7 +30,7 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
         Database calls are only made when needed.
         """
         
-        user: User = request.user
+        user: 'User' = request.user
         new_version = obj
         method: Union[Literal['GET'], Literal['POST'], Literal['DELETE'], Literal['PATCH']] = request.method
         """This is a little overboard, but allows, to better show the narrowing down of possibillites."""
@@ -41,7 +45,7 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
         # method: Literal['GET', 'POST', 'PATCH']
                         
         # Get custom permissions
-        user_has_this_article_permissions_query_set: QuerySet = UserArticlePermission.objects.filter(
+        user_has_this_article_permissions_query_set: 'QuerySet' = UserArticlePermission.objects.filter(
             user = user,
             lemma_article = new_version.lemma_article
         ).all()
@@ -89,11 +93,11 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
 class AbstractUserPermissionViewSetMixin(ABC):
     
     @abstractmethod
-    def get_naive_query_set(self) -> QuerySet:
+    def get_naive_query_set(self) -> 'QuerySet':
         """Get the query set without knowing the user"""
         raise NotImplementedError()
     
-    def get_queryset(self) -> QuerySet:
+    def get_queryset(self) -> 'QuerySet':
         return filter_queryset_by_user_permissions(self.request.user, self.get_naive_query_set())
     
     

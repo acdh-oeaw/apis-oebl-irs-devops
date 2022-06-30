@@ -1,10 +1,14 @@
 from itertools import zip_longest
-from typing import Generator, Optional, Set
-from django.contrib.auth.models import User
-from django.db.models.query import QuerySet
+from typing import Generator, Optional, Set, TYPE_CHECKING
 from rest_framework.exceptions import NotFound
-from oebl_editor.models import EditTypes, LemmaArticleVersion, UserArticlePermission
-from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
+from oebl_editor.models import LemmaArticleVersion, UserArticlePermission
+
+if TYPE_CHECKING:
+    from django.db.models.query import QuerySet
+    from django.contrib.auth.models import User
+    from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
+    from oebl_editor.models import EditTypes
+    
 
 
 def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -> Optional[LemmaArticleVersion]:
@@ -13,7 +17,7 @@ def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -
     
     For updates this is the version with the same id in the database, for creates, it is the newest one
     """
-    query: QuerySet = LemmaArticleVersion.objects.get_queryset()
+    query: 'QuerySet' = LemmaArticleVersion.objects.get_queryset()
     
     if update:
         query = query.filter(pk=lemma_article_version.pk)
@@ -32,7 +36,7 @@ def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -
     return last_version
 
   
-def extract_marks_flat(node: AbstractBaseNode, tag_name: MarkTagName) -> Generator[AbstractMarkNode, None, None]:
+def extract_marks_flat(node: 'AbstractBaseNode', tag_name: 'MarkTagName') -> Generator['AbstractMarkNode', None, None]:
     """Extract all marks from document recursive
 
     Args:
@@ -49,9 +53,9 @@ def extract_marks_flat(node: AbstractBaseNode, tag_name: MarkTagName) -> Generat
 
 
 def check_if_docs_diff_regarding_mark_types(
-        mark_types: Set[EditTypes],
-        doc1: EditorDocument,
-        doc2: EditorDocument,
+        mark_types: Set['EditTypes'],
+        doc1: 'EditorDocument',
+        doc2: 'EditorDocument',
     ) -> bool:
     """
     Check if two docs differe regarding provides mark types.
@@ -76,7 +80,7 @@ def check_if_docs_diff_regarding_mark_types(
     return True
 
 
-def filter_queryset_by_user_permissions(user: User, query_set: QuerySet) -> QuerySet:
+def filter_queryset_by_user_permissions(user: 'User', query_set: 'QuerySet') -> 'QuerySet':
     if user.is_superuser:
         return query_set
     return query_set.filter(

@@ -227,3 +227,21 @@ class TwoVersionQueryTestCase(DjangoTestCase):
     def test_query_last_version_with_update(self):
         version = get_last_version(self.version_2, update=True)
         self.assertEqual(version, self.version_2)
+
+
+
+class OneVersionQueryTestCase(DjangoTestCase):
+    
+    def setUp(self) -> None:
+        article = createLemmaArticle()
+        version_generator = VersionGenerator()
+        version_generator.add_versions_to_article(article, n=1)
+        self.version_1 = version_generator.versions[0]
+        
+    def test_query_last_version_with_no_update(self):
+        version = get_last_version(self.version_1, update=False)
+        self.assertEqual(version, self.version_1)
+        
+    def test_query_last_version_with_update(self):
+        version = get_last_version(self.version_1, update=True)
+        self.assertEqual(version, self.version_1)

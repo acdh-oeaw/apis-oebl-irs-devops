@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from unittest import TestCase, result
 
 from oebl_editor.queries import extract_marks_flat
+from oebl_editor.tests.utilitites.markup import create_a_document
 
 if TYPE_CHECKING:
     from oebl_editor.markup import AbstractBaseNode
@@ -80,6 +81,14 @@ class TestExtractMarksFlat(TestCase):
         
         result2 = list(extract_marks_flat(parent_node, mark_type_2))
         self.assertEqual(result2, [mark2, ])
+        
+        
+    def test_copy_of_real_doc(self):
+        doc = create_a_document()
+        annotations = list(extract_marks_flat(doc, 'annotation'))
+        self.assertEqual(annotations.__len__(), 1)
+        comments = list(extract_marks_flat(doc, 'comment'))
+        self.assertEqual(comments.__len__(), 1)
 
          
         

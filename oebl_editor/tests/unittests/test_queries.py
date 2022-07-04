@@ -2,14 +2,19 @@
 Test oebl_editor.queries
 """
 
-from pydoc import doc
-from typing import TYPE_CHECKING
-from unittest import TestCase, result
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Type, Union
+from unittest import TestCase
 from django.test import TestCase as DjangoTestCase
+from django.contrib.auth.models import User
 
-from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, extract_marks_flat, get_last_version
+
+from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion, UserArticlePermission, UserArticleAssignment
+
+from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, create_get_query_set_method_filtered_by_user, extract_marks_flat, get_last_version
 from oebl_editor.tests.utilitites.db_content import VersionGenerator, createLemmaArticle
 from oebl_editor.tests.utilitites.markup import create_a_document
+from oebl_irs_workflow.models import Editor, IrsUser
 
 if TYPE_CHECKING:
     from oebl_editor.markup import AbstractBaseNode
@@ -240,8 +245,173 @@ class OneVersionQueryTestCase(DjangoTestCase):
         
     def test_query_last_version_with_no_update(self):
         version = get_last_version(self.version_1, update=False)
-        self.assertEqual(version, self.version_1)
+        self.assertEqual(version, None)
         
     def test_query_last_version_with_update(self):
         version = get_last_version(self.version_1, update=True)
         self.assertEqual(version, self.version_1)
+
+
+class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
+    """
+    Prototype for all versions o this function
+    """ 
+
+    @property
+    @abstractmethod
+    def Model(self) -> Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], Type['UserArticleAssignment'], ]:
+         raise NotImplemented
+
+    @abstractmethod
+    def create_test_instances(self, article_1: 'LemmaArticle', article_2: 'LemmaArticle') -> None:
+        raise NotImplemented
+
+    @property
+    @abstractmethod
+    def lemma_article_key(self) -> str:
+        raise NotImplemented
+
+    def setUp(self) -> None:
+        """
+        1. Create an editor and an super user.
+        2. Create one article, with permissions for both users and one with no permissions.
+        3. If model not article create one model for each.
+        4. Create fake view and method.
+        """
+        # 1. Create an editor and an super user
+        self.editor = Editor.objects.create(username='Editor')
+        self.superuser = IrsUser.objects.create_superuser(username='Superuser')
+
+        # 2. Create one article, with permissions for both users and one with no permissions.
+        article_without_permission = createLemmaArticle()
+        article_with_permission = createLemmaArticle()
+        
+        editor_permission = UserArticlePermission(user=self.editor, lemma_article=article_with_permission, edit_type=EditTypes.WRITE)
+        editor_permission.save()
+
+        superuser_permission = UserArticlePermission(user=self.superuser, lemma_article=article_with_permission, edit_type=EditTypes.WRITE)
+        superuser_permission.save()
+
+        # 3. If model not article create one model for each.
+        if self.Model is not LemmaArticle:
+            self.create_test_instances(article_with_permission, article_without_permission)
+
+        class FakeView:
+            def __init__(self, fakeuser: User):
+                class Request:
+                    user: User = fakeuser
+                self.request = Request
+
+            get_queryset = create_get_query_set_method_filtered_by_user(self.Model, self.lemma_article_key)
+
+
+        self.fakeSuperUserView = FakeView(fakeuser=self.superuser)
+        self.fakeEditorView = FakeView(fakeuser=self.editor)
+
+    def test_super_user_gets_it_all(self):
+        """test super user gets 2 models (of right type)"""
+        result = self.fakeSuperUserView.get_queryset().all()
+        self.assertEqual(result.__len__(), 2)
+        self.assertTrue(all(model.__class__ is self.Model for model in result))
+
+        
+    def test_normal_user_gets_only_his_own(self):
+        """test normal user gets 1 model (of right type)"""
+        result = self.fakeEditorView.get_queryset().all()
+        self.assertEqual(result.__len__(), 1)
+        self.assertTrue(all(model.__class__ is self.Model for model in result))
+
+
+    
+class LemmaArticleFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
+    
+    @property
+    def Model(self) -> Type['LemmaArticle']:
+        return LemmaArticle
+
+    @property
+    def lemma_article_key(self) -> str:
+        return 'pk'
+
+    def create_test_instances(self, article_1: 'LemmaArticle', article_2: 'LemmaArticle') -> None:
+        return  # They are already there
+
+
+class LemmaArticleVersionFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
+    
+    @property
+    def Model(self) -> Type['LemmaArticleVersion']:
+        return LemmaArticleVersion
+
+    @property
+    def lemma_article_key(self) -> str:
+        return 'lemma_article'
+
+    def create_test_instances(self, article_1: 'LemmaArticle', article_2: 'LemmaArticle') -> None:
+        v1 = LemmaArticleVersion(lemma_article=article_1, markup={})
+        v1.save()
+        v2 = LemmaArticleVersion(lemma_article=article_2, markup={})
+        v2.save()
+
+
+class UserArticlePermissionFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
+    
+    def setUp(self) -> None:
+        super().setUp()
+        """
+        The setUp of the parent, created two permissions for the same article, each for superuser and editor.
+        These can be seen by both.
+        I want to make sure, the editor can not see permissions for articles, he/she/* dpes not have the permission to to view.
+        
+        Create one more article with super user permission,
+        """
+        another_article = createLemmaArticle()
+        superuser_permission = UserArticlePermission(user=self.superuser, lemma_article=another_article, edit_type=EditTypes.WRITE)
+        superuser_permission.save()
+
+    @property
+    def Model(self) -> Type['UserArticlePermission']:
+        return UserArticlePermission
+
+    @property
+    def lemma_article_key(self) -> str:
+        return 'lemma_article'
+
+    def create_test_instances(self, article_1: 'LemmaArticle', article_2: 'LemmaArticle') -> None:
+        return # They are already there
+
+    def test_super_user_gets_it_all(self):
+        """Test super user gets 3 models (of right type)"""
+        result = self.fakeSuperUserView.get_queryset().all()
+        self.assertEqual(result.__len__(), 3)
+        self.assertTrue(all(model.__class__ is self.Model for model in result))
+
+
+    def test_normal_user_gets_only_his_own(self):
+        """Test normal user gets 2 models (of right type): Both permissions are assigned to the same article"""
+        result = self.fakeEditorView.get_queryset().all()
+        self.assertEqual(result.__len__(), 2)
+        self.assertTrue(all(model.__class__ is self.Model for model in result))
+
+
+
+class UserArticleAssignmentFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
+    
+    @property
+    def Model(self) -> Type['UserArticleAssignment']:
+        return UserArticleAssignment
+
+    @property
+    def lemma_article_key(self) -> str:
+        return 'lemma_article'
+
+    def create_test_instances(self, article_1: 'LemmaArticle', article_2: 'LemmaArticle') -> None:
+        ass1 = UserArticleAssignment(lemma_article=article_1, user=self.editor)
+        ass1.save()
+        ass2 = UserArticleAssignment(lemma_article=article_2, user=self.superuser)
+        ass2.save()
+
+
+
+
+        

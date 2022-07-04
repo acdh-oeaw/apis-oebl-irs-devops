@@ -5,8 +5,6 @@ from oebl_irs_workflow.models import IrsUser, IssueLemma
 
 if TYPE_CHECKING:
     from oebl_editor.markup import EditorDocument, MarkTagName
-    
-    
 
 
 class LemmaArticle(models.Model):
@@ -39,11 +37,11 @@ class LemmaArticleVersion(models.Model):
         null=False,     # A version of an article must have an article.
     )
 
-    date_created = models.DateTimeField(auto_created=True)
-    date_modified = models.DateTimeField(auto_created=True, auto_now=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
 
     markup: 'EditorDocument' = models.JSONField(null=False)
-    """This markup will be using the frontends editor markup to json translation from https://tiptap.dev/api/editor#get-json ,
+    """This markup will be using the frontend's editor markup to json translation from https://tiptap.dev/api/editor#get-json ,
     using a lot of additional plugins that generate different annotations like comments and linked data.
     """
 

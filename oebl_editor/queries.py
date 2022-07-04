@@ -1,12 +1,13 @@
 from itertools import zip_longest
-from typing import Generator, Optional, Set, TYPE_CHECKING
+from typing import Callable, Generator, Optional, Set, TYPE_CHECKING, Union, Type
 from rest_framework.exceptions import NotFound
 from oebl_editor.models import LemmaArticleVersion, UserArticlePermission
 
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
-    from django.contrib.auth.models import User
-    from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName    
+    from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
+    from oebl_editor.models import LemmaArticle, UserArticleAssignment
+    from oebl_editor.views import LemmaArticleViewSet, LemmaArticleVersionViewSet, UserArticlePermissionViewSet, UserArticleAssignmentViewSet
 
 
 def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -> Optional[LemmaArticleVersion]:
@@ -21,8 +22,9 @@ def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -
         query = query.filter(pk=lemma_article_version.pk)
     else:
         query = query.filter(
-            lemma_article = lemma_article_version.lemma_article
-        ).order_by('date_modified')
+                lemma_article = lemma_article_version.lemma_article,
+                date_modified__lt = lemma_article_version.date_modified,
+            ).order_by('date_modified')
         
     last_version = query.first()
     
@@ -77,11 +79,20 @@ def check_if_docs_diff_regarding_mark_types(
             
     return False
 
-
-def filter_queryset_by_user_permissions(user: 'User', query_set: 'QuerySet') -> 'QuerySet':
-    if user.is_superuser:
-        return query_set
-    return query_set.filter(
-            lemma_article__in = UserArticlePermission.objects.filter(user = user, )
-        )
+        
+def create_get_query_set_method_filtered_by_user(
+        model: Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], Type['UserArticleAssignment'], ],
+        lemma_article_key: str = 'lemma_article',
+    ) -> Callable[[Union['LemmaArticle', 'LemmaArticleVersion', 'UserArticlePermission', 'UserArticleAssignment']], 'QuerySet']:
+    """Utility method to create get query sets method dynamically, since they are almost the same for all four models"""
+    
+    def get_queryset(self: Union['LemmaArticleViewSet', 'LemmaArticleVersionViewSet', 'UserArticlePermissionViewSet', 'UserArticleAssignmentViewSet']) -> 'QuerySet':
+        queryset = model.objects.get_queryset()
+        if self.request.user.is_superuser:
+            return queryset
+        return queryset.filter(**{
+            rf'{lemma_article_key}__in': UserArticlePermission.objects.filter(user = self.request.user).values(r'lemma_article'),
+        })
+        
+    return get_queryset
     

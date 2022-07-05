@@ -32,6 +32,7 @@ class _UserInteractionTestCaseArguments:
     permission: Optional['EditTypes']
     method: Union[Literal['GET'], Literal['POST'], Literal['PATCH'], Literal['DELETE']]
     expectedResponseCode: int
+    shouldHaveBody: Optional[bool] = True
 
 class _AbstractUserInterctionTestCaseProptotype(
     ABC, 
@@ -94,9 +95,8 @@ class _AbstractUserInterctionTestCaseProptotype(
 
     def test_api_response(self):
         self.assertEqual(self.arguments.expectedResponseCode, self.response.status_code)
-        if self.arguments.method == 'DELETE':
-            return
-        self.assertEqual(self.response['Content-Type'], 'application/json')
+        if self.arguments.shouldHaveBody:
+            self.assertEqual(self.response['Content-Type'], 'application/json')
 
 
 class SuperUserPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
@@ -180,4 +180,5 @@ class SuperUserDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
             permission=None,
             method='DELETE',
             expectedResponseCode=status.HTTP_204_NO_CONTENT,
+            shouldHaveBody=False,
         )

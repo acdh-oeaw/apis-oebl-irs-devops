@@ -6,7 +6,9 @@ one article
 
 4 kind of operations: POST / GET / PATCH / DELETE
 
-which makes 12*4 = 48 tests
+which makes 4*superuser + 4*author no permission, + 4 viewtypes * 4 operations
+
+=> 4 + 4 + 16 => 24 : ok
 
 each has two assertions
     - response status code
@@ -92,6 +94,8 @@ class _AbstractUserInterctionTestCaseProptotype(
                     'published': True,
                 }
             )
+
+        raise RuntimeError(rf'Argument method <{self.arguments.method}> is unkown.')
 
     def test_api_response(self):
         self.assertEqual(self.arguments.expectedResponseCode, self.response.status_code)
@@ -275,6 +279,234 @@ class AuthorNoPermissionPatch(_AbstractUserInterctionTestCaseProptotype, APITest
             UserModel=Author,
             permission=None,
             method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+
+class AuthorNoPermissionDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=None,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+
+class AuthorWritePermissionPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.WRITE,
+            method='POST',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class AuthorWritePermissionGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.WRITE,
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_data_is_empty(self):
+        self.assertEqual(self.data['results'].__len__(), 1)
+
+
+class AuthorWritePermissionPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.WRITE,
+            method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+        
+class AuthorWritePermissionDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.WRITE,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+
+class AuthorAnnotatePermissionPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.ANNOTATE,
+            method='POST',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class AuthorAnnotatePermissionGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.ANNOTATE,
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_data_is_empty(self):
+        self.assertEqual(self.data['results'].__len__(), 1)
+
+
+class AuthorAnnotatePermissionPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.ANNOTATE,
+            method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+        
+class AuthorAnnotatePermissionDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.ANNOTATE,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class AuthorCommentPermissionPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.COMMENT,
+            method='POST',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class AuthorCommentPermissionGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.COMMENT,
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_data_is_empty(self):
+        self.assertEqual(self.data['results'].__len__(), 1)
+
+
+class AuthorCommentPermissionPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.COMMENT,
+            method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+        
+class AuthorCommentPermissionDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.COMMENT,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class AuthorViewPermissionPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.VIEW,
+            method='POST',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class AuthorViewPermissionGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.VIEW,
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_data_is_empty(self):
+        self.assertEqual(self.data['results'].__len__(), 1)
+
+
+class AuthorViewPermissionPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.VIEW,
+            method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+        
+class AuthorViewPermissionDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=EditTypes.VIEW,
+            method='DELETE',
             expectedResponseCode=status.HTTP_403_FORBIDDEN,
             shouldHaveBody=False,
         )

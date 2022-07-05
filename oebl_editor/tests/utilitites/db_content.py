@@ -1,11 +1,11 @@
 
 
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Type, Union
 from oebl_editor.models import LemmaArticleVersion, LemmaArticle
 from oebl_editor.tests.utilitites.markup import create_a_document
-from oebl_irs_workflow.models import IssueLemma
-
+from oebl_irs_workflow.models import Author, Editor, IrsUser, IssueLemma
+from django.contrib.auth.models import User
 
 def createLemmaArticle() -> LemmaArticle:
     
@@ -42,5 +42,20 @@ class VersionGenerator:
             version.save()
             date += self.timedelta_between_dates
             self.versions.append(version)
-            self.dates.append(date)    
+            self.dates.append(date)
+
+
+def create_user(
+    UserModel: Union[Type['Editor'], Type['IrsUser'], Type['Author']],
+        username: str,
+        password: str,
+    ) -> Union['Editor', 'IrsUser', 'Author']:
+    user: 'User'
+    if UserModel is IrsUser:
+        user = IrsUser.objects.create_superuser(username=username)
+    else:
+        user = UserModel.objects.create(username=username)
     
+    user.set_password(password)
+    user.save()
+    return user

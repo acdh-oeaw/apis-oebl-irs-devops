@@ -182,3 +182,57 @@ class SuperUserDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
             expectedResponseCode=status.HTTP_204_NO_CONTENT,
             shouldHaveBody=False,
         )
+
+
+class EditorNoPermissionPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            permission=None,
+            method='POST',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class EditorNoPermissionGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            permission=None,
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_data_is_empty(self):
+        self.assertEqual(self.data['results'].__len__(), 0)
+
+
+class EditorNoPermissionPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            permission=None,
+            method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class EditorNoPermissionDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            permission=None,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )

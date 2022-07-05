@@ -16,7 +16,7 @@ each has two assertions
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Callable, List, Optional, Type, Union, Literal, Tuple
+from typing import Optional, Type, Union, Literal
 from oebl_editor.models import EditTypes, UserArticlePermission
 from oebl_editor.tests.utilitites.db_content import create_user, createLemmaArticle
 from oebl_irs_workflow.models import Editor, IrsUser, Author, IssueLemma

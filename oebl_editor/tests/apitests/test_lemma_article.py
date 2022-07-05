@@ -85,10 +85,9 @@ class _AbstractUserInterctionTestCaseProptotype(
                 }
             )
         if self.arguments.method == 'PATCH':
-            self.client.patch(
-                self.slug,
+            return self.client.patch(
+                rf'{self.slug}{self.article.pk}/',
                 data={
-                    'issue_lemma': self.article.pk,
                     'published': True,
                 }
             )
@@ -142,3 +141,31 @@ class SuperUserGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
         self.assertTrue(
             all((result.get('issue_lemma').__class__ is int for result in self.data['results']))
         )
+
+
+class SuperUserPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            permission=None,
+            method='PATCH',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_has_data(self):
+        self.assertIsNotNone(self.data, 'Patching an Article should return the json of the article')
+
+    def test_data_is_has_pk(self):
+        self.assertIsInstance(self.data.get('issue_lemma'), int, 'The result of patching an article Lemma, should contain the issue lemmas pk.'),
+
+    def test_data_default_properties(self):
+        self.assertTrue(self.data.get('published'), "The published property, should be changed to True"),
+        self.assertIsNone(self.data.get('current_version', False), "Current Version should not be changed"),
+    
+    def test_path_worked(self):
+        self.article.refresh_from_db()
+        self.assertTrue(self.article.published)
+     
+   

@@ -120,4 +120,25 @@ class SuperUserPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
         self.assertIsNone(self.data.get('current_version', False), "When creating an ArticleLemma, there should be no current version yet."),
         
 
+class SuperUserGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            permission=None,
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
      
+    def test_has_data(self):
+        self.assertIsNotNone(self.data, 'Geting an Article should return the json of the article')
+        self.assertIn('results', self.data, 'The articles should be stored in results')
+        results = self.data['results']
+        self.assertIsInstance(results, list)
+        self.assertEqual(results.__len__(), 1)
+
+    def test_data_is_has_pk(self):
+        self.assertTrue(
+            all((result.get('issue_lemma').__class__ is int for result in self.data['results']))
+        )

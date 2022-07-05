@@ -236,3 +236,45 @@ class EditorNoPermissionDelete(_AbstractUserInterctionTestCaseProptotype, APITes
             expectedResponseCode=status.HTTP_403_FORBIDDEN,
             shouldHaveBody=False,
         )
+
+
+
+class AuthorNoPermissionPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=None,
+            method='POST',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class AuthorNoPermissionGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=None,
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_data_is_empty(self):
+        self.assertEqual(self.data['results'].__len__(), 0)
+
+
+class AuthorNoPermissionPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Author,
+            permission=None,
+            method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )

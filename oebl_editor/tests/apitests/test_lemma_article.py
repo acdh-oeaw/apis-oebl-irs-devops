@@ -17,7 +17,7 @@ each has two assertions
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Callable, List, Optional, Type, Union, Literal, Tuple
-from oebl_editor.models import EditTypes
+from oebl_editor.models import EditTypes, UserArticlePermission
 from oebl_editor.tests.utilitites.db_content import create_user, createLemmaArticle
 from oebl_irs_workflow.models import Editor, IrsUser, Author, IssueLemma
 from rest_framework.test import APITestCase
@@ -32,23 +32,13 @@ class _UserInteractionTestCaseArguments:
     permission: Optional['EditTypes']
     method: Union[Literal['GET'], Literal['POST'], Literal['PATCH'], Literal['DELETE']]
     expectedResponseCode: int
-    checkResultAssertions: List[
-        Tuple[
-            Callable[
-                [dict], # Servers response json
-                bool, # success
-            ],  # Assertion callback for assertTrue
-            str,  # assertion message
-        ]
-    ]
-
-
-
 
 class _AbstractUserInterctionTestCaseProptotype(
     ABC, 
     # APITestCase  #  it is a mixin, and this confused the testing framework, but I keep that here, so I can use with IDE
     ):
+
+    slug = '/editor/api/v1/lemma-article/'
     
     @property
     @abstractmethod
@@ -62,29 +52,50 @@ class _AbstractUserInterctionTestCaseProptotype(
         self.client.login(username=username, password=password)
         if self.arguments.method == 'POST':
             self.response = self.setUpPOST()
-            return
         else:
             self.response = self.setUpWithArticle()
-            return
+        
+        try:
+            self.data = self.response.json()
+        except:
+            self.data = None
 
     def setUpPOST(self) -> 'Response':
         issue_lemma: 'IssueLemma' = IssueLemma.objects.create()
         return self.client.post(
-            '/editor/api/v1/lemma-article/',
+            self.slug,
             data={
                 'issue_lemma': issue_lemma.pk
             },
             format='json'
         )
 
+    def setUpWithArticle(self) -> 'Response':
+        self.article = createLemmaArticle()
+        if self.arguments.permission:
+            UserArticlePermission.objects.create(lemma_article=self.article, user=self.user, edit_type=self.arguments.permission)
+        
+        if self.arguments.method == 'GET':
+            return self.client.get(self.slug)
+        if self.arguments.method == 'DELETE':
+            return self.client.delete(
+                self.slug,
+                data={
+                    'issue_lemma': self.article.pk,
+                }
+            )
+        if self.arguments.method == 'PATCH':
+            self.client.patch(
+                self.slug,
+                data={
+                    'issue_lemma': self.article.pk,
+                    'published': True,
+                }
+            )
+
     def test_api_response(self):
         self.assertEqual(self.response['Content-Type'], 'application/json')
         self.assertEqual(self.arguments.expectedResponseCode, self.response.status_code)
-        if self.arguments.checkResultAssertions.__len__() == 0:
-            return
-        data = self.response.json()
-        for assertTrue, message in self.arguments.checkResultAssertions:
-            self.assertTrue(assertTrue(data), message)
 
 
 class SuperUserPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
@@ -96,14 +107,17 @@ class SuperUserPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
             permission=None,
             method='POST',
             expectedResponseCode=status.HTTP_201_CREATED,
-            checkResultAssertions=[
-                (lambda data: data.__len__() > 0, 'Posting an Article should return the json of the article'),
-                (lambda data: data.get('issue_lemma').__class__ is int, 'The result of posting an article Lemma, should contain the issue lemmas pk.'),
-                (lambda data: data.get('published') == False, "The default value for published should be false."),
-                (lambda data: data.get('current_version') == None, "When creating an ArticleLemma, there should be no current version yet."),
-            ]
         )
 
+    def test_has_data(self):
+        self.assertIsNotNone(self.data, 'Posting an Article should return the json of the article')
 
+    def test_data_is_has_pk(self):
+        self.assertIsInstance(self.data.get('issue_lemma'), int, 'The result of posting an article Lemma, should contain the issue lemmas pk.'),
+
+    def test_data_default_properties(self):
+        self.assertFalse(self.data.get('published'), "The default value for published should be false."),
+        self.assertIsNone(self.data.get('current_version', False), "When creating an ArticleLemma, there should be no current version yet."),
+        
 
      

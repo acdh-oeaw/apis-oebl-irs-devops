@@ -79,7 +79,7 @@ class _AbstractUserInterctionTestCaseProptotype(
             return self.client.get(self.slug)
         if self.arguments.method == 'DELETE':
             return self.client.delete(
-                self.slug,
+                rf'{self.slug}{self.article.pk}/',
                 data={
                     'issue_lemma': self.article.pk,
                 }
@@ -93,8 +93,10 @@ class _AbstractUserInterctionTestCaseProptotype(
             )
 
     def test_api_response(self):
-        self.assertEqual(self.response['Content-Type'], 'application/json')
         self.assertEqual(self.arguments.expectedResponseCode, self.response.status_code)
+        if self.arguments.method == 'DELETE':
+            return
+        self.assertEqual(self.response['Content-Type'], 'application/json')
 
 
 class SuperUserPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
@@ -169,3 +171,13 @@ class SuperUserPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
         self.assertTrue(self.article.published)
      
    
+class SuperUserDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            permission=None,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_204_NO_CONTENT,
+        )

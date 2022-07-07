@@ -1,13 +1,16 @@
 from itertools import zip_longest
 from typing import Callable, Generator, Optional, Set, TYPE_CHECKING, Union, Type
+from aiohttp import request
+from oebl_irs_workflow.models import AuthorIssueLemmaAssignment, IrsUser, IssueLemma
 from rest_framework.exceptions import NotFound
-from oebl_editor.models import LemmaArticleVersion, UserArticleAssignment
+from oebl_editor.models import LemmaArticleVersion
 
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
     from oebl_editor.models import LemmaArticle
-    from oebl_editor.views import LemmaArticleViewSet, LemmaArticleVersionViewSet, UserArticleAssignmentViewSet
+    from oebl_editor.views import LemmaArticleViewSet, LemmaArticleVersionViewSet
+    from django.contrib.auth.models import User
 
 
 def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -> Optional[LemmaArticleVersion]:
@@ -81,18 +84,42 @@ def check_if_docs_diff_regarding_mark_types(
 
         
 def create_get_query_set_method_filtered_by_user(
-        model: Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticleAssignment'], ],
+        model: Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], ],
         lemma_article_key: str = 'lemma_article',
-    ) -> Callable[[Union['LemmaArticle', 'LemmaArticleVersion', 'UserArticleAssignment', ]], 'QuerySet']:
+    ) -> Callable[[Union['LemmaArticle', 'LemmaArticleVersion', ], ], 'QuerySet']:
     """Utility method to create get query sets method dynamically, since they are almost the same for all four models"""
     
-    def get_queryset(self: Union['LemmaArticleViewSet', 'LemmaArticleVersionViewSet', 'UserArticleAssignmentViewSet', ]) -> 'QuerySet':
+    def get_queryset(self: Union['LemmaArticleViewSet', 'LemmaArticleVersionViewSet',  ]) -> 'QuerySet':
+        user: 'User' = self.request.user
+
         queryset = model.objects.get_queryset()
-        if self.request.user.is_superuser:
+
+        if user.is_superuser:
             return queryset
-        return queryset.filter(**{
-            rf'{lemma_article_key}__in': UserArticleAssignment.objects.filter(user = self.request.user).values(r'lemma_article'),
+
+        if not hasattr(user, 'irsuser'):
+            return queryset.none()
+        
+        irsuser: 'IrsUser' = user.irsuser
+
+        if not (hasattr(irsuser, 'editor') or hasattr(irsuser, 'author')):
+            return queryset.none()
+
+        primary_key_subquery: 'QuerySet'
+
+        if hasattr(irsuser, 'author'):
+            primary_key_subquery = AuthorIssueLemmaAssignment.objects.filter(author = irsuser.author).values(r'issue_lemma')
+        elif hasattr(irsuser, 'editor'):
+            primary_key_subquery = IssueLemma.objects.filter(editor=irsuser.editor).values(r'pk')
+        else:
+            raise RuntimeError(rf'Programming error: User should be super user, editor or author. Logic failed to determine the right user for user {user}')
+
+        filtered_query = queryset.filter(**{
+                rf'{lemma_article_key}__in': primary_key_subquery,
         })
+
+        return filtered_query
+
         
     return get_queryset
     

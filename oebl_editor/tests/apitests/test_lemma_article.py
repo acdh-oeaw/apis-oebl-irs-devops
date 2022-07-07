@@ -19,9 +19,9 @@ each has two assertions
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Type, Union, Literal
-from oebl_editor.models import EditTypes, UserArticleAssignment
+from oebl_editor.models import EditTypes, LemmaArticle
 from oebl_editor.tests.utilitites.db_content import create_user, createLemmaArticle
-from oebl_irs_workflow.models import Editor, IrsUser, Author, IssueLemma
+from oebl_irs_workflow.models import AuthorIssueLemmaAssignment, Editor, IrsUser, Author, IssueLemma
 from rest_framework.test import APITestCase
 from rest_framework.response import Response
 from rest_framework import status
@@ -31,7 +31,7 @@ from rest_framework import status
 class _UserInteractionTestCaseArguments:
 
     UserModel: Union[Type['Editor'], Type['IrsUser'], Type['Author']]
-    assignment_type: Optional['EditTypes']
+    assignment_type: Optional[Union['EditTypes', Literal['EDITOR']]]
     method: Union[Literal['GET'], Literal['POST'], Literal['PATCH'], Literal['DELETE']]
     expectedResponseCode: int
     shouldHaveBody: Optional[bool] = True
@@ -74,10 +74,11 @@ class _AbstractUserInterctionTestCaseProptotype(
         )
 
     def setUpWithArticle(self) -> 'Response':
-        self.article = createLemmaArticle()
-        if self.arguments.assignment_type:
-            UserArticleAssignment.objects.create(lemma_article=self.article, user=self.user, edit_type=self.arguments.assignment_type)
         
+        if self.arguments.assignment_type:
+            self.article = self.setUpAssignmentsAndCreateArticle()
+        else:
+            self.article = createLemmaArticle()
         if self.arguments.method == 'GET':
             return self.client.get(self.slug)
         if self.arguments.method == 'DELETE':
@@ -96,6 +97,23 @@ class _AbstractUserInterctionTestCaseProptotype(
             )
 
         raise RuntimeError(rf'Argument method <{self.arguments.method}> is unkown.')
+
+    def setUpAssignmentsAndCreateArticle(self) -> 'LemmaArticle':
+        if self.arguments.assignment_type == 'EDITOR':
+                if not hasattr(self.user, 'editor'):
+                    raise Exception(rf'Can not set author assignments for user who is no author: {self.user}')
+                return createLemmaArticle(issue_kwargs={'editor': self.user.editor})
+        else:
+            if not hasattr(self.user, 'author'):
+                raise Exception(rf'Can not set author assignments for user who is no author: {self.user}')
+            article = createLemmaArticle()
+            AuthorIssueLemmaAssignment.objects.create(
+                issue_lemma=article.issue_lemma, 
+                author=self.user.author, 
+                edit_type=self.arguments.assignment_type
+            )
+            return article
+
 
     def test_api_response(self):
         self.assertEqual(self.arguments.expectedResponseCode, self.response.status_code)
@@ -241,6 +259,58 @@ class EditorNoAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITes
             shouldHaveBody=False,
         )
 
+class EditorAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            method='POST',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class EditorAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            method='GET',
+            expectedResponseCode=status.HTTP_200_OK,
+        )
+
+    def test_data_is_empty(self):
+        self.assertEqual(self.data['results'].__len__(), 1)
+
+
+class EditorAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            method='PATCH',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+
+
+class EditorAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> _UserInteractionTestCaseArguments:
+        return _UserInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
 
 
 class AuthorNoAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):

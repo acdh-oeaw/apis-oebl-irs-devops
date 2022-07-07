@@ -1,22 +1,24 @@
 
 
 from datetime import datetime, timedelta
-from typing import List, Type, Union
+from typing import List, Optional, Type, Union
 from oebl_editor.models import LemmaArticleVersion, LemmaArticle
 from oebl_editor.tests.utilitites.markup import create_a_document
 from oebl_irs_workflow.models import Author, Editor, IrsUser, IssueLemma
 from django.contrib.auth.models import User
 
-def createLemmaArticle() -> LemmaArticle:
+def createLemmaArticle(article_kwargs: Optional[dict] = None, issue_kwargs: Optional[dict] = None) -> LemmaArticle:
     
-    issue = IssueLemma()
-    issue.save()
+    article_kwargs = {} if article_kwargs is None else article_kwargs
+    issue_kwargs = {} if issue_kwargs is None else issue_kwargs
+
+    issue = IssueLemma.objects.create(**issue_kwargs)
     
-    article = LemmaArticle(
+    article = LemmaArticle.objects.create(
         issue_lemma = issue,
+        **article_kwargs
     )
     
-    article.save()
     return article
 
 

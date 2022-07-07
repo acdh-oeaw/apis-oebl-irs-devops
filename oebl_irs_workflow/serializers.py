@@ -117,7 +117,6 @@ class LemmaLabelSerializer(serializers.ModelSerializer):
 class IssueLemmaSerializerOpenApi(serializers.ModelSerializer):
     issue = IssueSerializer()
     lemma = LemmaSerializer()
-    author = AuthorSerializer()
     editor = EditorSerializer()
     status = LemmaStatusSerializer()
 

@@ -95,9 +95,6 @@ class IssueLemma(models.Model):
         "LemmaStatus", on_delete=models.SET_NULL, null=True, blank=True
     )
     lemma = models.ForeignKey("Lemma", on_delete=models.SET_NULL, null=True)
-    author = models.ForeignKey(
-        "Author", on_delete=models.SET_NULL, null=True, blank=True
-    )
     editor = models.ForeignKey(
         "Editor", on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -193,4 +190,39 @@ class IssueLemma(models.Model):
             ret = super().save(*args, **kwargs)
         return ret
 
-    
+
+
+class EditTypes(models.TextChoices):
+    """Custom edit type system for Lemmas"""
+    VIEW = ('VIEW', 'VIEW')
+    COMMENT = ('COMMENT', 'COMMENT')
+    ANNOTATE = ('ANNOTATE', 'ANNOTATE')
+    WRITE = ('WRITE', 'WRITE')
+    """With `WRITE` including all other types"""
+
+
+class AuthorIssueLemmaAssignment(models.Model):
+    """Manage article assignments for users."""
+
+    issue_lemma = models.ForeignKey(
+        IssueLemma,
+        # When the issue lemma is deleted, the assignment has no meaning.
+        on_delete=models.CASCADE,
+        unique=False,   # One article can have multiple user assignments.
+        null=False,
+    )
+
+    author = models.ForeignKey(
+        Author,
+        # When the author is deleted, the assignment has no meaning.
+        on_delete=models.CASCADE,
+        unique=False,   # One user can have multiple article assignments.
+        null=False,
+    )
+
+    edit_type = models.CharField(
+        choices=EditTypes.choices,
+        null=False,
+        max_length=max((choice_tuple[1].__len__() for choice_tuple in EditTypes.choices))
+    )
+

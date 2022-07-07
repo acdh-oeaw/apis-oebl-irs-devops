@@ -1,4 +1,4 @@
-from oebl_editor.models import LemmaArticle, LemmaArticleVersion, UserArticleAssignment
+from oebl_editor.models import LemmaArticle, LemmaArticleVersion
 from rest_framework import serializers
 
 
@@ -18,10 +18,3 @@ class LemmaArticleVersionSerializer(serializers.ModelSerializer):
         
 
 userArticleEdityTypeMappingFields = ('lemma_article', 'user', 'edit_type', )
-        
-        
-class UserArticleAssignmentSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = UserArticleAssignment
-        fields = userArticleEdityTypeMappingFields

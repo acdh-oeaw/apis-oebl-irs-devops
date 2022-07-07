@@ -4,9 +4,10 @@ The Logic is defined in the serializers modules. Here are the uttility functions
 """
 from abc import ABC
 from typing import Literal, Set, Union, TYPE_CHECKING
+from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor
 from rest_framework import permissions
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, get_last_version
-from oebl_editor.models import EditTypes, UserArticleAssignment, node_edit_type_mapping
+from oebl_editor.models import EditTypes, node_edit_type_mapping
     
     
 if TYPE_CHECKING:
@@ -24,10 +25,8 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
     def has_object_permission(self, request: 'Request', view, obj: 'LemmaArticleVersion') -> bool:
         """
         Custom Business Logic For Editor Changes
-        
-        This is quite long decision tree, with a ĺot of returns: 8. 
-        Currently I think, this is the best way to impement this. Here are only the decisions, most of the work is in functions.
-        Database calls are only made when needed.
+
+        First check for super user, than for either editor or author in distinct methods        
         """
         
         user: 'User' = request.user
@@ -37,17 +36,37 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
 
         # Super users can do anything        
         if user.is_superuser:
-            return True
+            return self.checkSuperUserPermissions()
+
+        if hasattr(user, 'editor'):
+            return self.checkEditorPermissions(user.editor, method, new_version)
+
+        if hasattr(user, 'author'):
+            return self.checkAuthorPermissions(user.author, method, new_version)
+
+        return False
+
+    def checkSuperUserPermissions(self) -> bool:
+        return True
+
+    def checkEditorPermissions(self, editor: 'Editor', method: Union[Literal['GET'], Literal['POST'], Literal['PATCH'], Literal['DELETE'], ], new_version: 'LemmaArticleVersion') -> bool:
         
-        # Nobody else can delete
         if method == 'DELETE':
             return False
-        # method: Literal['GET', 'POST', 'PATCH']
-                        
+
+        # Checks if the chain LemmaArticleVersion.LemmaArticle.IssueLemma.Editor is the current editor.
+        return editor == new_version.lemma_article.issue_lemma.editor
+        
+
+    def checkAuthorPermissions(self, author: 'Author', method: Union[Literal['GET'], Literal['POST'], Literal['PATCH'], Literal['DELETE'], ], new_version: 'LemmaArticleVersion') -> bool:
+        
+        if method == 'DELETE':
+            return False
+
         # Get custom assignments: user can only handle assigned content.
-        user_has_this_article_assignments_query_set: 'QuerySet' = UserArticleAssignment.objects.filter(
-            user = user,
-            lemma_article = new_version.lemma_article
+        user_has_this_article_assignments_query_set: 'QuerySet' = AuthorIssueLemmaAssignment.objects.filter(
+            author = author,
+            issue_lemma = new_version.lemma_article.issue_lemma
         ).all()
         
         # No assigned content -> bye bye
@@ -72,7 +91,7 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
             
         # Remaining Edit Types are ANNOTATE AND COMMENT.
         # Remaining methods are: POST and PATCH. They are treated the same.
-        last_version = get_last_version(new_version, update = request.method == 'PATCH')
+        last_version = get_last_version(new_version, update = method == 'PATCH')
         
         # It is not possible to write a first version, without "WRITE". Annotation and comments are not stand alone content. They need text.
         if last_version is None:

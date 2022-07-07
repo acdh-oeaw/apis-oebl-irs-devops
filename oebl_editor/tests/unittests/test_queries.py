@@ -8,12 +8,12 @@ from unittest import TestCase
 from django.test import TestCase as DjangoTestCase
 from django.contrib.auth.models import User
 
-from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion, UserArticleAssignment
+from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion
 
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, create_get_query_set_method_filtered_by_user, extract_marks_flat, get_last_version
 from oebl_editor.tests.utilitites.db_content import VersionGenerator, createLemmaArticle
 from oebl_editor.tests.utilitites.markup import create_a_document
-from oebl_irs_workflow.models import Editor, IrsUser
+from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor, IrsUser
 
 if TYPE_CHECKING:
     from oebl_editor.markup import AbstractBaseNode
@@ -258,7 +258,7 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
 
     @property
     @abstractmethod
-    def Model(self) -> Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticleAssignment'], ]:
+    def Model(self) -> Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], ]:
          raise NotImplemented
 
     @abstractmethod
@@ -272,24 +272,26 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
 
     def setUp(self) -> None:
         """
-        1. Create an editor and an super user.
-        2. Create one article, with assignments for both users and one with no assignments.
+        1. Create an author, an editor and an super user.
+        2. Create one article, with assignments for editor and author, and one with no assignments.
         3. If model not article create one model for each.
         4. Create fake view and method.
         """
         # 1. Create an editor and an super user
+        self.author = Author.objects.create(username='Author')
         self.editor = Editor.objects.create(username='Editor')
         self.superuser = IrsUser.objects.create_superuser(username='Superuser')
 
         # 2. Create one article, with assignments for both users and one with no assignments.
         article_without_assignment = createLemmaArticle()
-        article_with_assignment = createLemmaArticle()
+        article_with_assignment = createLemmaArticle(issue_kwargs={'editor': self.editor})
         
-        editor_assignment = UserArticleAssignment(user=self.editor, lemma_article=article_with_assignment, edit_type=EditTypes.WRITE)
-        editor_assignment.save()
-
-        superuser_assignment = UserArticleAssignment(user=self.superuser, lemma_article=article_with_assignment, edit_type=EditTypes.WRITE)
-        superuser_assignment.save()
+        author_assignment: 'AuthorIssueLemmaAssignment' = AuthorIssueLemmaAssignment.objects.create(
+            issue_lemma = article_with_assignment.issue_lemma,
+            author = self.author,
+            edit_type = EditTypes.WRITE,
+        )
+        author_assignment.save()
 
         # 3. If model not article create one model for each.
         if self.Model is not LemmaArticle:
@@ -306,6 +308,7 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
 
         self.fakeSuperUserView = FakeView(fakeuser=self.superuser)
         self.fakeEditorView = FakeView(fakeuser=self.editor)
+        self.fakeAuthorView = FakeView(fakeuser=self.author)
 
     def test_super_user_gets_it_all(self):
         """test super user gets 2 models (of right type)"""
@@ -314,12 +317,17 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
         self.assertTrue(all(model.__class__ is self.Model for model in result))
 
         
-    def test_normal_user_gets_only_his_own(self):
-        """test normal user gets 1 model (of right type)"""
+    def test_editor_gets_only_his_own(self):
+        """test editor user gets 1 model (of right type)"""
         result = self.fakeEditorView.get_queryset().all()
         self.assertEqual(result.__len__(), 1)
         self.assertTrue(all(model.__class__ is self.Model for model in result))
 
+    def test_author_gets_only_his_own(self):
+        """test author user gets 1 model (of right type)"""
+        result = self.fakeAuthorView.get_queryset().all()
+        self.assertEqual(result.__len__(), 1)
+        self.assertTrue(all(model.__class__ is self.Model for model in result))
 
     
 class LemmaArticleFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
@@ -351,43 +359,3 @@ class LemmaArticleVersionFilterQuerySetMethodTestCase(DynamicFilterQuerySetMetho
         v1.save()
         v2 = LemmaArticleVersion(lemma_article=article_2, markup={})
         v2.save()
-
-
-class UserArticleAssignmentFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
-    
-    def setUp(self) -> None:
-        super().setUp()
-        """
-        The setUp of the parent, created two assignments for the same article, each for superuser and editor.
-        These can be seen by both.
-        I want to make sure, the editor can not see assignments for articles, he/she/* does not have the permission = assignment to to view.
-        
-        Create one more article with super user assignment,
-        """
-        another_article = createLemmaArticle()
-        superuser_assignment = UserArticleAssignment(user=self.superuser, lemma_article=another_article, edit_type=EditTypes.WRITE)
-        superuser_assignment.save()
-
-    @property
-    def Model(self) -> Type['UserArticleAssignment']:
-        return UserArticleAssignment
-
-    @property
-    def lemma_article_key(self) -> str:
-        return 'lemma_article'
-
-    def create_test_instances(self, article_1: 'LemmaArticle', article_2: 'LemmaArticle') -> None:
-        return # They are already there
-
-    def test_super_user_gets_it_all(self):
-        """Test super user gets 3 models (of right type)"""
-        result = self.fakeSuperUserView.get_queryset().all()
-        self.assertEqual(result.__len__(), 3)
-        self.assertTrue(all(model.__class__ is self.Model for model in result))
-
-
-    def test_normal_user_gets_only_his_own(self):
-        """Test normal user gets 2 models (of right type): Both assignments are assigned to the same article"""
-        result = self.fakeEditorView.get_queryset().all()
-        self.assertEqual(result.__len__(), 2)
-        self.assertTrue(all(model.__class__ is self.Model for model in result))

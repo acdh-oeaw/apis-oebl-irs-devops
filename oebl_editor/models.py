@@ -65,11 +65,9 @@ node_edit_type_mapping: Dict[
 """This maps the edit types in the database to node types in the markdown"""     
 
 
-class AbstractUserArticleEditTypeMapping(models.Model):
-    """Map permissions to users and articles."""
-    class Meta:
-        abstract = True
-        
+class UserArticleAssignment(models.Model):
+    """Manage article assignments for users."""
+
     lemma_article = models.ForeignKey(
         LemmaArticle,
         # When the issue lemma is deleted, the assignment has no meaning.
@@ -91,9 +89,4 @@ class AbstractUserArticleEditTypeMapping(models.Model):
         null=False,
         max_length=max((choice_tuple[1].__len__() for choice_tuple in EditTypes.choices))
     )
-
-
-class UserArticleAssignment(AbstractUserArticleEditTypeMapping):
-    """Manage article assignments for users."""
-    pass
 

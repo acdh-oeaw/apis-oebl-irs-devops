@@ -97,7 +97,3 @@ class UserArticlePermission(AbstractUserArticleEditTypeMapping):
     """Manage custom article permission for users."""
     pass
 
-
-class UserArticleAssignment(AbstractUserArticleEditTypeMapping):
-    """Manage user assignments for users"""
-    pass

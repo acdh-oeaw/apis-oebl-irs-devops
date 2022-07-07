@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from django.contrib.auth.models import User
     from rest_framework.request import Request
-    from oebl_editor.models import LemmaArticleVersion, LemmaArticle, UserArticleAssignment
+    from oebl_editor.models import LemmaArticleVersion
 
     
 

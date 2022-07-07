@@ -1,11 +1,9 @@
-from typing import TYPE_CHECKING
-
 from oebl_editor.permissions import AbstractReadOnlyPermissionViewSetMixin, LemmaArticleVersionPermissions
 from oebl_editor.queries import create_get_query_set_method_filtered_by_user
 from rest_framework import viewsets
 from rest_framework import permissions
-from oebl_editor.serializers import LemmaArticleSerializer, LemmaArticleVersionSerializer, UserArticlePermissionSerializer, UserArticleAssignmentSerializer
-from oebl_editor.models import LemmaArticle, LemmaArticleVersion, UserArticlePermission, UserArticleAssignment
+from oebl_editor.serializers import LemmaArticleSerializer, LemmaArticleVersionSerializer, UserArticlePermissionSerializer
+from oebl_editor.models import LemmaArticle, LemmaArticleVersion, UserArticlePermission
 
 
 class LemmaArticleViewSet(AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
@@ -30,11 +28,3 @@ class UserArticlePermissionViewSet(AbstractReadOnlyPermissionViewSetMixin, views
     
     get_queryset = create_get_query_set_method_filtered_by_user(UserArticlePermission)
    
-    
-    
-class UserArticleAssignmentViewSet(AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
-    
-    serializer_class = UserArticleAssignmentSerializer
-
-    get_queryset = create_get_query_set_method_filtered_by_user(UserArticleAssignment)
-    

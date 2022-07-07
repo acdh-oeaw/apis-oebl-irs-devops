@@ -1,4 +1,4 @@
-from oebl_editor.models import LemmaArticle, LemmaArticleVersion, UserArticleAssignment, UserArticlePermission
+from oebl_editor.models import LemmaArticle, LemmaArticleVersion, UserArticlePermission
 from rest_framework import serializers
 
 
@@ -24,11 +24,4 @@ class UserArticlePermissionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = UserArticlePermission
-        fields = userArticleEdityTypeMappingFields
-
-
-class UserArticleAssignmentSerializer(serializers.ModelSerializer):
-    
-    class Meta:
-        model = UserArticleAssignment
         fields = userArticleEdityTypeMappingFields

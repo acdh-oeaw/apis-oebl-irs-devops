@@ -6,8 +6,8 @@ from oebl_editor.models import LemmaArticleVersion, UserArticlePermission
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
-    from oebl_editor.models import LemmaArticle, UserArticleAssignment
-    from oebl_editor.views import LemmaArticleViewSet, LemmaArticleVersionViewSet, UserArticlePermissionViewSet, UserArticleAssignmentViewSet
+    from oebl_editor.models import LemmaArticle
+    from oebl_editor.views import LemmaArticleViewSet, LemmaArticleVersionViewSet, UserArticlePermissionViewSet
 
 
 def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -> Optional[LemmaArticleVersion]:
@@ -81,12 +81,12 @@ def check_if_docs_diff_regarding_mark_types(
 
         
 def create_get_query_set_method_filtered_by_user(
-        model: Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], Type['UserArticleAssignment'], ],
+        model: Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], ],
         lemma_article_key: str = 'lemma_article',
-    ) -> Callable[[Union['LemmaArticle', 'LemmaArticleVersion', 'UserArticlePermission', 'UserArticleAssignment']], 'QuerySet']:
+    ) -> Callable[[Union['LemmaArticle', 'LemmaArticleVersion', 'UserArticlePermission', ]], 'QuerySet']:
     """Utility method to create get query sets method dynamically, since they are almost the same for all four models"""
     
-    def get_queryset(self: Union['LemmaArticleViewSet', 'LemmaArticleVersionViewSet', 'UserArticlePermissionViewSet', 'UserArticleAssignmentViewSet']) -> 'QuerySet':
+    def get_queryset(self: Union['LemmaArticleViewSet', 'LemmaArticleVersionViewSet', 'UserArticlePermissionViewSet', ]) -> 'QuerySet':
         queryset = model.objects.get_queryset()
         if self.request.user.is_superuser:
             return queryset

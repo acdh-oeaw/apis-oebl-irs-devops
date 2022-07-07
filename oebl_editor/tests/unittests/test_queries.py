@@ -8,8 +8,7 @@ from unittest import TestCase
 from django.test import TestCase as DjangoTestCase
 from django.contrib.auth.models import User
 
-
-from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion, UserArticlePermission, UserArticleAssignment
+from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion, UserArticlePermission
 
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, create_get_query_set_method_filtered_by_user, extract_marks_flat, get_last_version
 from oebl_editor.tests.utilitites.db_content import VersionGenerator, createLemmaArticle
@@ -259,7 +258,7 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
 
     @property
     @abstractmethod
-    def Model(self) -> Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], Type['UserArticleAssignment'], ]:
+    def Model(self) -> Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], ]:
          raise NotImplemented
 
     @abstractmethod
@@ -392,26 +391,3 @@ class UserArticlePermissionFilterQuerySetMethodTestCase(DynamicFilterQuerySetMet
         result = self.fakeEditorView.get_queryset().all()
         self.assertEqual(result.__len__(), 2)
         self.assertTrue(all(model.__class__ is self.Model for model in result))
-
-
-
-class UserArticleAssignmentFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
-    
-    @property
-    def Model(self) -> Type['UserArticleAssignment']:
-        return UserArticleAssignment
-
-    @property
-    def lemma_article_key(self) -> str:
-        return 'lemma_article'
-
-    def create_test_instances(self, article_1: 'LemmaArticle', article_2: 'LemmaArticle') -> None:
-        ass1 = UserArticleAssignment(lemma_article=article_1, user=self.editor)
-        ass1.save()
-        ass2 = UserArticleAssignment(lemma_article=article_2, user=self.superuser)
-        ass2.save()
-
-
-
-
-        

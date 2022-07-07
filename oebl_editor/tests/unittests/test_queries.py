@@ -8,7 +8,7 @@ from unittest import TestCase
 from django.test import TestCase as DjangoTestCase
 from django.contrib.auth.models import User
 
-from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion, UserArticlePermission
+from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion, UserArticleAssignment
 
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, create_get_query_set_method_filtered_by_user, extract_marks_flat, get_last_version
 from oebl_editor.tests.utilitites.db_content import VersionGenerator, createLemmaArticle
@@ -258,7 +258,7 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
 
     @property
     @abstractmethod
-    def Model(self) -> Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], ]:
+    def Model(self) -> Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticleAssignment'], ]:
          raise NotImplemented
 
     @abstractmethod
@@ -273,7 +273,7 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
     def setUp(self) -> None:
         """
         1. Create an editor and an super user.
-        2. Create one article, with permissions for both users and one with no permissions.
+        2. Create one article, with assignments for both users and one with no assignments.
         3. If model not article create one model for each.
         4. Create fake view and method.
         """
@@ -281,19 +281,19 @@ class DynamicFilterQuerySetMethodTestCasePrototype(ABC):
         self.editor = Editor.objects.create(username='Editor')
         self.superuser = IrsUser.objects.create_superuser(username='Superuser')
 
-        # 2. Create one article, with permissions for both users and one with no permissions.
-        article_without_permission = createLemmaArticle()
-        article_with_permission = createLemmaArticle()
+        # 2. Create one article, with assignments for both users and one with no assignments.
+        article_without_assignment = createLemmaArticle()
+        article_with_assignment = createLemmaArticle()
         
-        editor_permission = UserArticlePermission(user=self.editor, lemma_article=article_with_permission, edit_type=EditTypes.WRITE)
-        editor_permission.save()
+        editor_assignment = UserArticleAssignment(user=self.editor, lemma_article=article_with_assignment, edit_type=EditTypes.WRITE)
+        editor_assignment.save()
 
-        superuser_permission = UserArticlePermission(user=self.superuser, lemma_article=article_with_permission, edit_type=EditTypes.WRITE)
-        superuser_permission.save()
+        superuser_assignment = UserArticleAssignment(user=self.superuser, lemma_article=article_with_assignment, edit_type=EditTypes.WRITE)
+        superuser_assignment.save()
 
         # 3. If model not article create one model for each.
         if self.Model is not LemmaArticle:
-            self.create_test_instances(article_with_permission, article_without_permission)
+            self.create_test_instances(article_with_assignment, article_without_assignment)
 
         class FakeView:
             def __init__(self, fakeuser: User):
@@ -353,24 +353,24 @@ class LemmaArticleVersionFilterQuerySetMethodTestCase(DynamicFilterQuerySetMetho
         v2.save()
 
 
-class UserArticlePermissionFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
+class UserArticleAssignmentFilterQuerySetMethodTestCase(DynamicFilterQuerySetMethodTestCasePrototype, DjangoTestCase):
     
     def setUp(self) -> None:
         super().setUp()
         """
-        The setUp of the parent, created two permissions for the same article, each for superuser and editor.
+        The setUp of the parent, created two assignments for the same article, each for superuser and editor.
         These can be seen by both.
-        I want to make sure, the editor can not see permissions for articles, he/she/* dpes not have the permission to to view.
+        I want to make sure, the editor can not see assignments for articles, he/she/* does not have the permission = assignment to to view.
         
-        Create one more article with super user permission,
+        Create one more article with super user assignment,
         """
         another_article = createLemmaArticle()
-        superuser_permission = UserArticlePermission(user=self.superuser, lemma_article=another_article, edit_type=EditTypes.WRITE)
-        superuser_permission.save()
+        superuser_assignment = UserArticleAssignment(user=self.superuser, lemma_article=another_article, edit_type=EditTypes.WRITE)
+        superuser_assignment.save()
 
     @property
-    def Model(self) -> Type['UserArticlePermission']:
-        return UserArticlePermission
+    def Model(self) -> Type['UserArticleAssignment']:
+        return UserArticleAssignment
 
     @property
     def lemma_article_key(self) -> str:
@@ -387,7 +387,7 @@ class UserArticlePermissionFilterQuerySetMethodTestCase(DynamicFilterQuerySetMet
 
 
     def test_normal_user_gets_only_his_own(self):
-        """Test normal user gets 2 models (of right type): Both permissions are assigned to the same article"""
+        """Test normal user gets 2 models (of right type): Both assignments are assigned to the same article"""
         result = self.fakeEditorView.get_queryset().all()
         self.assertEqual(result.__len__(), 2)
         self.assertTrue(all(model.__class__ is self.Model for model in result))

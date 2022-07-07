@@ -1,13 +1,13 @@
 from itertools import zip_longest
 from typing import Callable, Generator, Optional, Set, TYPE_CHECKING, Union, Type
 from rest_framework.exceptions import NotFound
-from oebl_editor.models import LemmaArticleVersion, UserArticlePermission
+from oebl_editor.models import LemmaArticleVersion, UserArticleAssignment
 
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from oebl_editor.markup import AbstractBaseNode, AbstractMarkNode,  EditorDocument, MarkTagName
     from oebl_editor.models import LemmaArticle
-    from oebl_editor.views import LemmaArticleViewSet, LemmaArticleVersionViewSet, UserArticlePermissionViewSet
+    from oebl_editor.views import LemmaArticleViewSet, LemmaArticleVersionViewSet, UserArticleAssignmentViewSet
 
 
 def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -> Optional[LemmaArticleVersion]:
@@ -81,17 +81,17 @@ def check_if_docs_diff_regarding_mark_types(
 
         
 def create_get_query_set_method_filtered_by_user(
-        model: Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticlePermission'], ],
+        model: Union[ Type['LemmaArticle'], Type['LemmaArticleVersion'], Type['UserArticleAssignment'], ],
         lemma_article_key: str = 'lemma_article',
-    ) -> Callable[[Union['LemmaArticle', 'LemmaArticleVersion', 'UserArticlePermission', ]], 'QuerySet']:
+    ) -> Callable[[Union['LemmaArticle', 'LemmaArticleVersion', 'UserArticleAssignment', ]], 'QuerySet']:
     """Utility method to create get query sets method dynamically, since they are almost the same for all four models"""
     
-    def get_queryset(self: Union['LemmaArticleViewSet', 'LemmaArticleVersionViewSet', 'UserArticlePermissionViewSet', ]) -> 'QuerySet':
+    def get_queryset(self: Union['LemmaArticleViewSet', 'LemmaArticleVersionViewSet', 'UserArticleAssignmentViewSet', ]) -> 'QuerySet':
         queryset = model.objects.get_queryset()
         if self.request.user.is_superuser:
             return queryset
         return queryset.filter(**{
-            rf'{lemma_article_key}__in': UserArticlePermission.objects.filter(user = self.request.user).values(r'lemma_article'),
+            rf'{lemma_article_key}__in': UserArticleAssignment.objects.filter(user = self.request.user).values(r'lemma_article'),
         })
         
     return get_queryset

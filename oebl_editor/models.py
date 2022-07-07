@@ -52,7 +52,7 @@ class EditTypes(models.TextChoices):
     COMMENT = ('COMMENT', 'COMMENT')
     ANNOTATE = ('ANNOTATE', 'ANNOTATE')
     WRITE = ('WRITE', 'WRITE')
-    """With `WRITE` including all other permission"""
+    """With `WRITE` including all other types"""
     
     
 node_edit_type_mapping: Dict[
@@ -72,17 +72,17 @@ class AbstractUserArticleEditTypeMapping(models.Model):
         
     lemma_article = models.ForeignKey(
         LemmaArticle,
-        # When the issue lemma is deleted, the permission has no meaning.
+        # When the issue lemma is deleted, the assignment has no meaning.
         on_delete=models.CASCADE,
-        unique=False,   # One article can have multiple user permissions.
+        unique=False,   # One article can have multiple user assignments.
         null=False,
     )
 
     user = models.ForeignKey(
         IrsUser,
-        # When the useris deleted, the permission has no meaning.
+        # When the useris deleted, the assignment has no meaning.
         on_delete=models.CASCADE,
-        unique=False,   # One user can have multiple article permissions.
+        unique=False,   # One user can have multiple article assignments.
         null=False,
     )
 
@@ -93,7 +93,7 @@ class AbstractUserArticleEditTypeMapping(models.Model):
     )
 
 
-class UserArticlePermission(AbstractUserArticleEditTypeMapping):
-    """Manage custom article permission for users."""
+class UserArticleAssignment(AbstractUserArticleEditTypeMapping):
+    """Manage article assignments for users."""
     pass
 

@@ -6,7 +6,7 @@ from abc import ABC
 from typing import Literal, Set, Union, TYPE_CHECKING
 from rest_framework import permissions
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, get_last_version
-from oebl_editor.models import EditTypes, UserArticlePermission, node_edit_type_mapping
+from oebl_editor.models import EditTypes, UserArticleAssignment, node_edit_type_mapping
     
     
 if TYPE_CHECKING:
@@ -44,29 +44,29 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
             return False
         # method: Literal['GET', 'POST', 'PATCH']
                         
-        # Get custom permissions
-        user_has_this_article_permissions_query_set: 'QuerySet' = UserArticlePermission.objects.filter(
+        # Get custom assignments: user can only handle assigned content.
+        user_has_this_article_assignments_query_set: 'QuerySet' = UserArticleAssignment.objects.filter(
             user = user,
             lemma_article = new_version.lemma_article
         ).all()
         
-        # No permisions -> bye bye
-        if user_has_this_article_permissions_query_set.__len__() == 0:
+        # No assigned content -> bye bye
+        if user_has_this_article_assignments_query_set.__len__() == 0:
             return False
         
-        # With GET any permission is ok (because the "least" is VIEW)
+        # With GET any assignment type is ok (because the "least" is VIEW)
         if method == 'GET':
             return True
         #  method: Literal['POST', 'PATCH']
         
         # Have a set of Enums instead of query set of objects, for easier
-        user_has_this_article_permissions: Set[EditTypes] = {permission.edit_type for permission in user_has_this_article_permissions_query_set}
+        user_has_this_article_assignments: Set[EditTypes] = {assignment.edit_type for assignment in user_has_this_article_assignments_query_set}
                 
         # Everything is allowed for write    
-        if EditTypes.WRITE in user_has_this_article_permissions:
+        if EditTypes.WRITE in user_has_this_article_assignments:
             return True
         
-        if {EditTypes.VIEW} == user_has_this_article_permissions:
+        if {EditTypes.VIEW} == user_has_this_article_assignments:
             # With only VIEW and method: Literal['POST', 'PATCH'], please leave
             return False
             
@@ -83,7 +83,7 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
             node_type
             for edit_type, node_type
             in node_edit_type_mapping.items()
-            if edit_type not in user_has_this_article_permissions
+            if edit_type not in user_has_this_article_assignments
         )
         
         return check_if_docs_diff_regarding_mark_types(prohibited_node_types, new_version, last_version)

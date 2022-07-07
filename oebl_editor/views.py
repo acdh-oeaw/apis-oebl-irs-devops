@@ -2,8 +2,8 @@ from oebl_editor.permissions import AbstractReadOnlyPermissionViewSetMixin, Lemm
 from oebl_editor.queries import create_get_query_set_method_filtered_by_user
 from rest_framework import viewsets
 from rest_framework import permissions
-from oebl_editor.serializers import LemmaArticleSerializer, LemmaArticleVersionSerializer, UserArticlePermissionSerializer
-from oebl_editor.models import LemmaArticle, LemmaArticleVersion, UserArticlePermission
+from oebl_editor.serializers import LemmaArticleSerializer, LemmaArticleVersionSerializer, UserArticleAssignmentSerializer
+from oebl_editor.models import LemmaArticle, LemmaArticleVersion, UserArticleAssignment
 
 
 class LemmaArticleViewSet(AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
@@ -22,9 +22,9 @@ class LemmaArticleVersionViewSet(viewsets.ModelViewSet):
 
     
     
-class UserArticlePermissionViewSet(AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
+class UserArticleAssignmentViewSet(AbstractReadOnlyPermissionViewSetMixin, viewsets.ModelViewSet):
     
-    serializer_class = UserArticlePermissionSerializer
+    serializer_class = UserArticleAssignmentSerializer
     
-    get_queryset = create_get_query_set_method_filtered_by_user(UserArticlePermission)
+    get_queryset = create_get_query_set_method_filtered_by_user(UserArticleAssignment)
    

@@ -18,7 +18,7 @@ each has two assertions
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Type, Union, Literal
+from typing import Optional
 from oebl_editor.models import EditTypes, LemmaArticle
 from oebl_editor.tests.utilitites.db_content import create_user, createLemmaArticle
 from oebl_irs_workflow.models import AuthorIssueLemmaAssignment, Editor, IrsUser, Author, IssueLemma
@@ -26,77 +26,40 @@ from rest_framework.test import APITestCase
 from rest_framework.response import Response
 from rest_framework import status
 
+from ._abstract_test_prototype import UserInteractionTestCaseArguments, UserInteractionTestCaseProptotype, DatabaseTestData
+
 
 @dataclass(init=True, frozen=True, order=False)
-class _UserInteractionTestCaseArguments:
+class ArticleDatabaseTestData(DatabaseTestData):
+    issue: 'IssueLemma'
+    article: Optional['LemmaArticle'] = None,
 
-    UserModel: Union[Type['Editor'], Type['IrsUser'], Type['Author']]
-    assignment_type: Optional[Union['EditTypes', Literal['EDITOR']]]
-    method: Union[Literal['GET'], Literal['POST'], Literal['PATCH'], Literal['DELETE']]
-    expectedResponseCode: int
-    shouldHaveBody: Optional[bool] = True
-
-class _AbstractUserInterctionTestCaseProptotype(
-    ABC, 
-    # APITestCase  #  it is a mixin, and this confused the testing framework, but I keep that here, so I can use with IDE
+class _UserArticleInteractionTestCaseProptotype(
+    UserInteractionTestCaseProptotype,
     ):
 
-    slug = '/editor/api/v1/lemma-article/'
-    
+    databaseTestData: ArticleDatabaseTestData
+
     @property
-    @abstractmethod
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        raise NotImplemented
+    def slug(self) -> str:
+        return '/editor/api/v1/lemma-article/'
 
-    def setUp(self) -> None:
-        username = self.arguments.UserModel.__class__.__name__
-        password = 'password'
-        self.user = create_user(self.arguments.UserModel, username=username, password=password)
-        self.client.login(username=username, password=password)
+    def setUpDataBaseTestData(self):
+        # When posting, we only need the Issue Lemma in the database
         if self.arguments.method == 'POST':
-            self.response = self.setUpPOST()
-        else:
-            self.response = self.setUpWithArticle()
-        
-        try:
-            self.data = self.response.json()
-        except:
-            self.data = None
-
-    def setUpPOST(self) -> 'Response':
-        issue_lemma: 'IssueLemma' = IssueLemma.objects.create()
-        return self.client.post(
-            self.slug,
-            data={
-                'issue_lemma': issue_lemma.pk
-            },
-            format='json'
-        )
-
-    def setUpWithArticle(self) -> 'Response':
+            return ArticleDatabaseTestData(
+                issue= IssueLemma.objects.create()
+            )
         
         if self.arguments.assignment_type:
-            self.article = self.setUpAssignmentsAndCreateArticle()
-        else:
-            self.article = createLemmaArticle()
-        if self.arguments.method == 'GET':
-            return self.client.get(self.slug)
-        if self.arguments.method == 'DELETE':
-            return self.client.delete(
-                rf'{self.slug}{self.article.pk}/',
-                data={
-                    'issue_lemma': self.article.pk,
-                }
-            )
-        if self.arguments.method == 'PATCH':
-            return self.client.patch(
-                rf'{self.slug}{self.article.pk}/',
-                data={
-                    'published': True,
-                }
-            )
-
-        raise RuntimeError(rf'Argument method <{self.arguments.method}> is unkown.')
+            article = self.setUpAssignmentsAndCreateArticle()
+        else: 
+            article = createLemmaArticle()
+            
+        return ArticleDatabaseTestData(
+            issue=article.issue_lemma,
+            article=article
+        )
 
     def setUpAssignmentsAndCreateArticle(self) -> 'LemmaArticle':
         if self.arguments.assignment_type == 'EDITOR':
@@ -114,18 +77,40 @@ class _AbstractUserInterctionTestCaseProptotype(
             )
             return article
 
+    def getResponse(self) -> 'Response':
+        if self.arguments.method == 'POST':
+            return self.client.post(
+                self.slug,
+                data={
+                    'issue_lemma': self.databaseTestData.issue.pk,
+                },
+                format='json'
+            )
 
-    def test_api_response(self):
-        self.assertEqual(self.arguments.expectedResponseCode, self.response.status_code)
-        if self.arguments.shouldHaveBody:
-            self.assertEqual(self.response['Content-Type'], 'application/json')
+        elif self.arguments.method == 'GET':
+            return self.client.get(self.slug)
+        
+        elif self.arguments.method == 'PATCH':
+            return self.client.patch(
+                self.get_slug_with_pk(self.databaseTestData.article.pk),
+                data={
+                    'published': True,
+                }
+            )
+        elif self.arguments.method == 'DELETE':
+             return self.client.delete(
+                self.get_slug_with_pk(self.databaseTestData.article.pk),
+            )
+        
+        else:
+            raise RuntimeError(rf'Argument method <{self.arguments.method}> is not supported. Put out.')
 
 
-class SuperUserPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class SuperUserPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=IrsUser,
             assignment_type=None,
             method='POST',
@@ -133,21 +118,21 @@ class SuperUserPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
         )
 
     def test_has_data(self):
-        self.assertIsNotNone(self.data, 'Posting an Article should return the json of the article')
+        self.assertIsNotNone(self.responseData, 'Posting an Article should return the json of the article')
 
     def test_data_is_has_pk(self):
-        self.assertIsInstance(self.data.get('issue_lemma'), int, 'The result of posting an article Lemma, should contain the issue lemmas pk.'),
+        self.assertIsInstance(self.responseData.get('issue_lemma'), int, 'The result of posting an article Lemma, should contain the issue lemmas pk.'),
 
     def test_data_default_properties(self):
-        self.assertFalse(self.data.get('published'), "The default value for published should be false."),
-        self.assertIsNone(self.data.get('current_version', False), "When creating an ArticleLemma, there should be no current version yet."),
+        self.assertFalse(self.responseData.get('published'), "The default value for published should be false."),
+        self.assertIsNone(self.responseData.get('current_version', False), "When creating an ArticleLemma, there should be no current version yet."),
         
 
-class SuperUserGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class SuperUserGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=IrsUser,
             assignment_type=None,
             method='GET',
@@ -155,23 +140,23 @@ class SuperUserGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
         )
      
     def test_has_data(self):
-        self.assertIsNotNone(self.data, 'Geting an Article should return the json of the article')
-        self.assertIn('results', self.data, 'The articles should be stored in results')
-        results = self.data['results']
+        self.assertIsNotNone(self.responseData, 'Geting an Article should return the json of the article')
+        self.assertIn('results', self.responseData, 'The articles should be stored in results')
+        results = self.responseData['results']
         self.assertIsInstance(results, list)
         self.assertEqual(results.__len__(), 1)
 
     def test_data_is_has_pk(self):
         self.assertTrue(
-            all((result.get('issue_lemma').__class__ is int for result in self.data['results']))
+            all((result.get('issue_lemma').__class__ is int for result in self.responseData['results']))
         )
 
 
-class SuperUserPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class SuperUserPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=IrsUser,
             assignment_type=None,
             method='PATCH',
@@ -179,25 +164,25 @@ class SuperUserPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
         )
 
     def test_has_data(self):
-        self.assertIsNotNone(self.data, 'Patching an Article should return the json of the article')
+        self.assertIsNotNone(self.responseData, 'Patching an Article should return the json of the article')
 
     def test_data_is_has_pk(self):
-        self.assertIsInstance(self.data.get('issue_lemma'), int, 'The result of patching an article Lemma, should contain the issue lemmas pk.'),
+        self.assertIsInstance(self.responseData.get('issue_lemma'), int, 'The result of patching an article Lemma, should contain the issue lemmas pk.'),
 
     def test_data_default_properties(self):
-        self.assertTrue(self.data.get('published'), "The published property, should be changed to True"),
-        self.assertIsNone(self.data.get('current_version', False), "Current Version should not be changed"),
+        self.assertTrue(self.responseData.get('published'), "The published property, should be changed to True"),
+        self.assertIsNone(self.responseData.get('current_version', False), "Current Version should not be changed"),
     
     def test_path_worked(self):
-        self.article.refresh_from_db()
-        self.assertTrue(self.article.published)
+        self.databaseTestData.article.refresh_from_db()
+        self.assertTrue(self.databaseTestData.article.published)
      
    
-class SuperUserDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class SuperUserDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=IrsUser,
             assignment_type=None,
             method='DELETE',
@@ -206,11 +191,11 @@ class SuperUserDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
         )
 
 
-class EditorNoAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type=None,
             method='POST',
@@ -219,11 +204,11 @@ class EditorNoAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestC
         )
 
 
-class EditorNoAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type=None,
             method='GET',
@@ -231,14 +216,14 @@ class EditorNoAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCa
         )
 
     def test_data_is_empty(self):
-        self.assertEqual(self.data['results'].__len__(), 0)
+        self.assertEqual(self.responseData['results'].__len__(), 0)
 
 
-class EditorNoAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type=None,
             method='PATCH',
@@ -247,11 +232,11 @@ class EditorNoAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITest
         )
 
 
-class EditorNoAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type=None,
             method='DELETE',
@@ -259,11 +244,11 @@ class EditorNoAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITes
             shouldHaveBody=False,
         )
 
-class EditorAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type='EDITOR',
             method='POST',
@@ -272,11 +257,11 @@ class EditorAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCas
         )
 
 
-class EditorAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type='EDITOR',
             method='GET',
@@ -284,14 +269,14 @@ class EditorAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase
         )
 
     def test_data_is_empty(self):
-        self.assertEqual(self.data['results'].__len__(), 1)
+        self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class EditorAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type='EDITOR',
             method='PATCH',
@@ -300,11 +285,11 @@ class EditorAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCa
         )
 
 
-class EditorAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class EditorAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type='EDITOR',
             method='DELETE',
@@ -313,11 +298,11 @@ class EditorAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestC
         )
 
 
-class AuthorNoAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=None,
             method='POST',
@@ -326,11 +311,11 @@ class AuthorNoAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestC
         )
 
 
-class AuthorNoAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=None,
             method='GET',
@@ -338,14 +323,14 @@ class AuthorNoAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCa
         )
 
     def test_data_is_empty(self):
-        self.assertEqual(self.data['results'].__len__(), 0)
+        self.assertEqual(self.responseData['results'].__len__(), 0)
 
 
-class AuthorNoAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=None,
             method='PATCH',
@@ -355,11 +340,11 @@ class AuthorNoAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITest
 
 
 
-class AuthorNoAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=None,
             method='DELETE',
@@ -369,11 +354,11 @@ class AuthorNoAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITes
 
 
 
-class AuthorWriteAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.WRITE,
             method='POST',
@@ -382,11 +367,11 @@ class AuthorWriteAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITe
         )
 
 
-class AuthorWriteAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.WRITE,
             method='GET',
@@ -394,14 +379,14 @@ class AuthorWriteAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITes
         )
 
     def test_data_is_empty(self):
-        self.assertEqual(self.data['results'].__len__(), 1)
+        self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorWriteAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.WRITE,
             method='PATCH',
@@ -409,11 +394,11 @@ class AuthorWriteAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APIT
             shouldHaveBody=False,
         )
         
-class AuthorWriteAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.WRITE,
             method='DELETE',
@@ -423,11 +408,11 @@ class AuthorWriteAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, API
 
 
 
-class AuthorAnnotateAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.ANNOTATE,
             method='POST',
@@ -436,11 +421,11 @@ class AuthorAnnotateAssignmentPost(_AbstractUserInterctionTestCaseProptotype, AP
         )
 
 
-class AuthorAnnotateAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.ANNOTATE,
             method='GET',
@@ -448,14 +433,14 @@ class AuthorAnnotateAssignmentGet(_AbstractUserInterctionTestCaseProptotype, API
         )
 
     def test_data_is_empty(self):
-        self.assertEqual(self.data['results'].__len__(), 1)
+        self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorAnnotateAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.ANNOTATE,
             method='PATCH',
@@ -463,11 +448,11 @@ class AuthorAnnotateAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, A
             shouldHaveBody=False,
         )
         
-class AuthorAnnotateAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.ANNOTATE,
             method='DELETE',
@@ -476,11 +461,11 @@ class AuthorAnnotateAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, 
         )
 
 
-class AuthorCommentAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.COMMENT,
             method='POST',
@@ -489,11 +474,11 @@ class AuthorCommentAssignmentPost(_AbstractUserInterctionTestCaseProptotype, API
         )
 
 
-class AuthorCommentAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.COMMENT,
             method='GET',
@@ -501,14 +486,14 @@ class AuthorCommentAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APIT
         )
 
     def test_data_is_empty(self):
-        self.assertEqual(self.data['results'].__len__(), 1)
+        self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorCommentAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.COMMENT,
             method='PATCH',
@@ -516,11 +501,11 @@ class AuthorCommentAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, AP
             shouldHaveBody=False,
         )
         
-class AuthorCommentAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.COMMENT,
             method='DELETE',
@@ -529,11 +514,11 @@ class AuthorCommentAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, A
         )
 
 
-class AuthorViewAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.VIEW,
             method='POST',
@@ -542,11 +527,11 @@ class AuthorViewAssignmentPost(_AbstractUserInterctionTestCaseProptotype, APITes
         )
 
 
-class AuthorViewAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.VIEW,
             method='GET',
@@ -554,14 +539,14 @@ class AuthorViewAssignmentGet(_AbstractUserInterctionTestCaseProptotype, APITest
         )
 
     def test_data_is_empty(self):
-        self.assertEqual(self.data['results'].__len__(), 1)
+        self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorViewAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.VIEW,
             method='PATCH',
@@ -569,11 +554,11 @@ class AuthorViewAssignmentPatch(_AbstractUserInterctionTestCaseProptotype, APITe
             shouldHaveBody=False,
         )
         
-class AuthorViewAssignmentDelete(_AbstractUserInterctionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
-    def arguments(self) -> _UserInteractionTestCaseArguments:
-        return _UserInteractionTestCaseArguments(
+    def arguments(self) -> UserInteractionTestCaseArguments:
+        return UserInteractionTestCaseArguments(
             UserModel=Author,
             assignment_type=EditTypes.VIEW,
             method='DELETE',

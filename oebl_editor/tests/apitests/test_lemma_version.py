@@ -90,7 +90,7 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
                 article_version_1=version_1,
             )
         
-        version_2 = LemmaArticle.objects.create(
+        version_2 = LemmaArticleVersion.objects.create(
             lemma_article = article,
             markup = self.version_2_markup,
         )
@@ -184,7 +184,8 @@ class SuccessfullGetPrototype(UserArticleVersionInteractionTestCaseProptotype):
             ]
         )
 
-class SuperUserPostAnnotateTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+
+class SuperUserPostTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -195,5 +196,19 @@ class SuperUserPostAnnotateTestCase(SuccessfullPostOrPatchPrototype, APITestCase
             method='POST',
             shouldHaveBody=True
         )
+
+
+class SuperUserGetTestCase(SuccessfullGetPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_200_OK,
+            method='GET',
+            shouldHaveBody=True
+        )
+
 
 

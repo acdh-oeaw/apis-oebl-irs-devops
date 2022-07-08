@@ -28,8 +28,8 @@ class DatabaseTestData(ABC):
     pass
 
 class UserInteractionTestCaseProptotype(
-    ABC, 
-    # APITestCase  #  it is a mixin, and this confused the testing framework, but I keep that here, so I can use with IDE
+        ABC, 
+        # APITestCase  #  it is a mixin, and this confused the testing framework, but I keep that here, so I can use with IDE
     ):
 
     @property

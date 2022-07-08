@@ -4,8 +4,9 @@ if TYPE_CHECKING:
     from oebl_editor.markup import EditorDocument
 
 def create_a_document(
-    number_of_annotations: int = 1,
-    comment_text: str = 'comment_text'
+      number_of_annotations: int = 1,
+      comment_text: str = 'comment_text',
+      additional_text: str = '',  
     ) -> 'EditorDocument':
     return {
   "type": "doc",
@@ -16,7 +17,7 @@ def create_a_document(
       "content": [
         {
           "type": "text",
-          "text": "Überschrift 1"
+          "text": f"Überschrift 1 {additional_text}"
         }
       ]
     },
@@ -75,3 +76,8 @@ def create_a_document(
 }
     
     
+class example_markup:
+  get_original_version = staticmethod(create_a_document)
+  get_changed_text = staticmethod(lambda: create_a_document(additional_text='Mehr Text'))
+  get_changed_comment = staticmethod(lambda: create_a_document(comment_text='Zu viel Text!'))
+  get_changed_annotations = staticmethod(lambda: create_a_document(number_of_annotations=2))

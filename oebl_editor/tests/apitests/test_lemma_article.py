@@ -16,6 +16,7 @@ each has two assertions
 """
 
 
+from abc import ABC
 from dataclasses import dataclass
 from typing import Optional
 from oebl_editor.models import EditTypes, LemmaArticle
@@ -31,10 +32,11 @@ from ._abstract_test_prototype import UserInteractionTestCaseArguments, UserInte
 @dataclass(init=True, frozen=True, order=False)
 class ArticleDatabaseTestData(DatabaseTestData):
     issue: 'IssueLemma'
-    article: Optional['LemmaArticle'] = None,
+    article: Optional['LemmaArticle'] = None
 
-class _UserArticleInteractionTestCaseProptotype(
-    UserInteractionTestCaseProptotype,
+class UserArticleInteractionTestCaseProptotype(
+        UserInteractionTestCaseProptotype,
+        ABC,
     ):
 
     databaseTestData: ArticleDatabaseTestData
@@ -50,10 +52,7 @@ class _UserArticleInteractionTestCaseProptotype(
                 issue= IssueLemma.objects.create()
             )
         
-        if self.arguments.assignment_type:
-            article = self.setUpAssignmentsAndCreateArticle()
-        else: 
-            article = createLemmaArticle()
+        article = self.setUpAssignmentsAndCreateArticle()
             
         return ArticleDatabaseTestData(
             issue=article.issue_lemma,
@@ -61,6 +60,10 @@ class _UserArticleInteractionTestCaseProptotype(
         )
 
     def setUpAssignmentsAndCreateArticle(self) -> 'LemmaArticle':
+
+        if not self.arguments.assignment_type:
+            return createLemmaArticle()
+
         if self.arguments.assignment_type == 'EDITOR':
                 if not hasattr(self.user, 'editor'):
                     raise Exception(rf'Can not set author assignments for user who is no author: {self.user}')
@@ -105,7 +108,7 @@ class _UserArticleInteractionTestCaseProptotype(
             raise RuntimeError(rf'Argument method <{self.arguments.method}> is not supported. Put out.')
 
 
-class SuperUserPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class SuperUserPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -127,7 +130,7 @@ class SuperUserPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
         self.assertIsNone(self.responseData.get('current_version', False), "When creating an ArticleLemma, there should be no current version yet."),
         
 
-class SuperUserGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class SuperUserGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -151,7 +154,7 @@ class SuperUserGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
         )
 
 
-class SuperUserPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class SuperUserPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -177,7 +180,7 @@ class SuperUserPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
         self.assertTrue(self.databaseTestData.article.published)
      
    
-class SuperUserDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class SuperUserDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -190,7 +193,7 @@ class SuperUserDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
         )
 
 
-class EditorNoAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -203,7 +206,7 @@ class EditorNoAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestC
         )
 
 
-class EditorNoAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -218,7 +221,7 @@ class EditorNoAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCa
         self.assertEqual(self.responseData['results'].__len__(), 0)
 
 
-class EditorNoAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -231,7 +234,7 @@ class EditorNoAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITest
         )
 
 
-class EditorNoAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNoAssignmentDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -243,7 +246,7 @@ class EditorNoAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITes
             shouldHaveBody=False,
         )
 
-class EditorAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorAssignmentPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -256,7 +259,7 @@ class EditorAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCas
         )
 
 
-class EditorAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorAssignmentGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -271,7 +274,7 @@ class EditorAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase
         self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class EditorAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorAssignmentPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -284,7 +287,7 @@ class EditorAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCa
         )
 
 
-class EditorAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorAssignmentDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -297,7 +300,7 @@ class EditorAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestC
         )
 
 
-class AuthorNoAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -310,7 +313,7 @@ class AuthorNoAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestC
         )
 
 
-class AuthorNoAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -325,7 +328,7 @@ class AuthorNoAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCa
         self.assertEqual(self.responseData['results'].__len__(), 0)
 
 
-class AuthorNoAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -339,7 +342,7 @@ class AuthorNoAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITest
 
 
 
-class AuthorNoAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorNoAssignmentDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -353,7 +356,7 @@ class AuthorNoAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITes
 
 
 
-class AuthorWriteAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -366,7 +369,7 @@ class AuthorWriteAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITe
         )
 
 
-class AuthorWriteAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -381,7 +384,7 @@ class AuthorWriteAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITes
         self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorWriteAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -393,7 +396,7 @@ class AuthorWriteAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APIT
             shouldHaveBody=False,
         )
         
-class AuthorWriteAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorWriteAssignmentDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -407,7 +410,7 @@ class AuthorWriteAssignmentDelete(_UserArticleInteractionTestCaseProptotype, API
 
 
 
-class AuthorAnnotateAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -420,7 +423,7 @@ class AuthorAnnotateAssignmentPost(_UserArticleInteractionTestCaseProptotype, AP
         )
 
 
-class AuthorAnnotateAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -435,7 +438,7 @@ class AuthorAnnotateAssignmentGet(_UserArticleInteractionTestCaseProptotype, API
         self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorAnnotateAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -447,7 +450,7 @@ class AuthorAnnotateAssignmentPatch(_UserArticleInteractionTestCaseProptotype, A
             shouldHaveBody=False,
         )
         
-class AuthorAnnotateAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorAnnotateAssignmentDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -460,7 +463,7 @@ class AuthorAnnotateAssignmentDelete(_UserArticleInteractionTestCaseProptotype, 
         )
 
 
-class AuthorCommentAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -473,7 +476,7 @@ class AuthorCommentAssignmentPost(_UserArticleInteractionTestCaseProptotype, API
         )
 
 
-class AuthorCommentAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -488,7 +491,7 @@ class AuthorCommentAssignmentGet(_UserArticleInteractionTestCaseProptotype, APIT
         self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorCommentAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -500,7 +503,7 @@ class AuthorCommentAssignmentPatch(_UserArticleInteractionTestCaseProptotype, AP
             shouldHaveBody=False,
         )
         
-class AuthorCommentAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorCommentAssignmentDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -513,7 +516,7 @@ class AuthorCommentAssignmentDelete(_UserArticleInteractionTestCaseProptotype, A
         )
 
 
-class AuthorViewAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentPost(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -526,7 +529,7 @@ class AuthorViewAssignmentPost(_UserArticleInteractionTestCaseProptotype, APITes
         )
 
 
-class AuthorViewAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentGet(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -541,7 +544,7 @@ class AuthorViewAssignmentGet(_UserArticleInteractionTestCaseProptotype, APITest
         self.assertEqual(self.responseData['results'].__len__(), 1)
 
 
-class AuthorViewAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentPatch(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:
@@ -553,7 +556,7 @@ class AuthorViewAssignmentPatch(_UserArticleInteractionTestCaseProptotype, APITe
             shouldHaveBody=False,
         )
         
-class AuthorViewAssignmentDelete(_UserArticleInteractionTestCaseProptotype, APITestCase):
+class AuthorViewAssignmentDelete(UserArticleInteractionTestCaseProptotype, APITestCase):
 
     @property
     def arguments(self) -> UserInteractionTestCaseArguments:

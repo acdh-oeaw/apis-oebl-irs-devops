@@ -16,11 +16,10 @@ each has two assertions
 """
 
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 from oebl_editor.models import EditTypes, LemmaArticle
-from oebl_editor.tests.utilitites.db_content import create_user, createLemmaArticle
+from oebl_editor.tests.utilitites.db_content import createLemmaArticle
 from oebl_irs_workflow.models import AuthorIssueLemmaAssignment, Editor, IrsUser, Author, IssueLemma
 from rest_framework.test import APITestCase
 from rest_framework.response import Response

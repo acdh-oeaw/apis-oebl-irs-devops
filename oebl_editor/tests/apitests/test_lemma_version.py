@@ -144,7 +144,7 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
     
     def getResponseDELETE(self) -> 'Response':
         return self.client.delete(
-            self.get_slug_with_pk(self.version_1_markup),
+            self.get_slug_with_pk(self.databaseTestData.article_version_1.pk),
             format='json',
         )
 
@@ -252,5 +252,18 @@ class SuperUserPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, APITest
             method='PATCH',
             shouldHaveBody=True,
             edit_type=EditTypes.COMMENT,
+        )
+
+
+class SuperUserDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            assignment_type=None,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_204_NO_CONTENT,
+            shouldHaveBody=False,
         )
 

@@ -129,7 +129,7 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
 
     
     def getResponseGET(self) -> 'Response':
-        return self.client.get(self.slug)
+        return self.client.get(self.slug, format='json')
 
     
     def getResponsePATCH(self) -> 'Response':
@@ -137,13 +137,15 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
             self.get_slug_with_pk(self.target_version.pk),
             data={
                 'markup': self.version_2_markup,
-            }
+            },
+            format='json',
         ) 
 
     
     def getResponseDELETE(self) -> 'Response':
         return self.client.delete(
-            self.get_slug_with_pk(self.version_1_markup)
+            self.get_slug_with_pk(self.version_1_markup),
+            format='json',
         )
 
 
@@ -211,4 +213,44 @@ class SuperUserGetTestCase(SuccessfullGetPrototype, APITestCase):
         )
 
 
+class SuperUserPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_200_OK,
+            method='PATCH',
+            shouldHaveBody=True,
+            edit_type=EditTypes.WRITE,
+        )
+
+
+class SuperUserPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_200_OK,
+            method='PATCH',
+            shouldHaveBody=True,
+            edit_type=EditTypes.ANNOTATE,
+        )
+
+
+class SuperUserPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_200_OK,
+            method='PATCH',
+            shouldHaveBody=True,
+            edit_type=EditTypes.COMMENT,
+        )
 

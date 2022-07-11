@@ -14,6 +14,10 @@ from oebl_editor.tests.apitests._abstract_test_prototype import UserInteractionT
 from oebl_editor.tests.apitests.test_lemma_article import ArticleDatabaseTestData, UserArticleInteractionTestCaseProptotype
 from oebl_irs_workflow.models import EditTypes, Editor, IrsUser
 
+# -----------------------
+# Arguments And Test Data
+# -----------------------
+
 @dataclass(init=True, frozen=True, order=False)
 class UserArticleVersionInteractionTestCaseArguments(UserInteractionTestCaseArguments):
     update: bool = False
@@ -27,7 +31,11 @@ class ArticleVersionDatabaseTestData(ArticleDatabaseTestData):
     article: 'LemmaArticle'
     article_version_1: Optional['LemmaArticleVersion'] = None
     article_version_2: Optional['LemmaArticleVersion'] = None
-    
+
+# ---------------
+# Test Prototypes
+# ---------------
+
 
 class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTestCaseProptotype, ABC):
 
@@ -209,6 +217,11 @@ class SuccessfullRetrievePrototype(UserArticleVersionInteractionTestCaseProptoty
         )
 
 
+# ----------------
+# Super User Tests
+# ----------------
+
+
 class SuperUserPostTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
     
     @property
@@ -302,6 +315,12 @@ class SuperUserDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, A
         )
 
 
+
+# --------------------------
+# Editor Tests: Not Assigned
+# --------------------------
+
+
 class EditorNotAssignedPostTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
@@ -393,4 +412,3 @@ class EditorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCasePropt
             expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
             shouldHaveBody=False,
         )
-

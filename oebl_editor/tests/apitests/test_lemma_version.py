@@ -12,7 +12,7 @@ from oebl_editor.models import LemmaArticle, LemmaArticleVersion
 from oebl_editor.tests.utilitites.markup import example_markup
 from oebl_editor.tests.apitests._abstract_test_prototype import UserInteractionTestCaseArguments
 from oebl_editor.tests.apitests.test_lemma_article import ArticleDatabaseTestData, UserArticleInteractionTestCaseProptotype
-from oebl_irs_workflow.models import EditTypes, Editor, IrsUser
+from oebl_irs_workflow.models import Author, EditTypes, Editor, IrsUser
 
 # -----------------------
 # Arguments And Test Data
@@ -513,3 +513,102 @@ class EditorAssignedDeleteTestCase(UserArticleVersionInteractionTestCaseProptoty
             shouldHaveBody=False,
         )
 
+
+
+
+# --------------------------
+# Author Tests: Not Assigned
+# --------------------------
+
+
+class AuthorNotAssignedPostTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            method='POST',
+            shouldHaveBody=False
+        )
+
+
+class AuthorNotAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_200_OK,
+            method='GET',
+            shouldHaveBody=True
+        )
+
+
+class AuthorNotAssignedRetrieveTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,
+            method='Retrieve',
+            shouldHaveBody=False
+        )
+
+class AuthorNotAssignedPatchWRITETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
+            method='PATCH',
+            shouldHaveBody=False,
+            edit_type=EditTypes.WRITE,
+        )
+
+
+class AuthorNotAssignedPatchANNOTATETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
+            method='PATCH',
+            shouldHaveBody=False,
+            edit_type=EditTypes.ANNOTATE,
+        )
+
+
+class AuthorNotAssignedPatchCOMMENTTypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
+            method='PATCH',
+            shouldHaveBody=False,
+            edit_type=EditTypes.COMMENT,
+        )
+
+
+class AuthorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=None,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
+            shouldHaveBody=False,
+        )

@@ -275,7 +275,7 @@ class SuperUserDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, A
         )
 
 
-class EditorNotAssignedPostTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNotAssignedPostTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -301,42 +301,42 @@ class EditorNotAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
         )
 
 
-class EditorNotAssignedPatchWRITETypeTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNotAssignedPatchWRITETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
         return UserArticleVersionInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type=None,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
             method='PATCH',
             shouldHaveBody=False,
             edit_type=EditTypes.WRITE,
         )
 
 
-class EditorNotAssignedPatchANNOTATETypeTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNotAssignedPatchANNOTATETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
         return UserArticleVersionInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type=None,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
             method='PATCH',
             shouldHaveBody=False,
             edit_type=EditTypes.ANNOTATE,
         )
 
 
-class EditorNotAssignedPatchCOMMENTTypeTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+class EditorNotAssignedPatchCOMMENTTypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
         return UserArticleVersionInteractionTestCaseArguments(
             UserModel=Editor,
             assignment_type=None,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
             method='PATCH',
             shouldHaveBody=False,
             edit_type=EditTypes.COMMENT,
@@ -351,7 +351,7 @@ class EditorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCasePropt
             UserModel=Editor,
             assignment_type=None,
             method='DELETE',
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
             shouldHaveBody=False,
         )
 

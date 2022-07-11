@@ -4,17 +4,19 @@ The Logic is defined in the serializers modules. Here are the uttility functions
 """
 from abc import ABC
 from typing import Literal, Set, Union, TYPE_CHECKING
-from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor, IrsUser
 from rest_framework import permissions
+from rest_framework.exceptions import ValidationError, NotFound
+
+from oebl_editor.models import LemmaArticleVersion
+from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor, IrsUser
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, get_last_version
-from oebl_editor.models import EditTypes, node_edit_type_mapping
-    
+from oebl_editor.models import EditTypes, LemmaArticle, node_edit_type_mapping
+
     
 if TYPE_CHECKING:
     from django.db.models.query import QuerySet
     from django.contrib.auth.models import User
     from rest_framework.request import Request
-    from oebl_editor.models import LemmaArticleVersion
 
     
 
@@ -27,16 +29,20 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
         # Super user can do everything
         if user.is_superuser:
             return True
-        # Nobody else can delete
-        # This is also in has_object_permission -> checkEditorPermissions and checkAuthorPermissions
-        # but it is stated here also, because if not a super user tries to delete an item, which he/she/* is not assigned,
-        # a 404 is returned. I think 403 is much more clear. 
-        if request.method == 'DELETE':
-            return False
+
         if not hasattr(user, 'irsuser'):
             return False
+        
         irsuser: 'IrsUser' = user.irsuser
-        return hasattr(irsuser, 'editor') or hasattr(irsuser, 'author')
+
+        if (not hasattr(irsuser, 'author')) and (not hasattr(irsuser, 'editor')):
+            return False
+
+        if request.method == 'POST':
+            return self.checkPostRequestForEditorsAndAuthors(request.data, irsuser)
+
+        # All others are cool or handled by has_object_permission
+        return True
 
 
     def has_object_permission(self, request: 'Request', view, obj: 'LemmaArticleVersion') -> bool:
@@ -45,9 +51,10 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
 
         First check for super user, than for either editor or author in distinct methods        
         """
+
         user: 'User' = request.user
         new_version = obj
-        method: Union[Literal['GET'], Literal['POST'], Literal['DELETE'], Literal['PATCH']] = request.method
+        method: Union[Literal['GET'], Literal['DELETE'], Literal['PATCH']] = request.method
         """This is a little overboard, but allows, to better show the narrowing down of possibillites."""
         # Super users can do anything        
         if user.is_superuser:
@@ -63,6 +70,39 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
 
         if hasattr(irsuser, 'author'):
             return self.checkAuthorPermissions(user.author, method, new_version)
+
+        return False
+
+    def checkPostRequestForEditorsAndAuthors(self, data: dict, irsuser: 'IrsUser') -> bool:
+        # At this point, we have to check content for our business logic,   
+        # even if this means, we kind of validate data here … 
+        # But if not, we would trigger a 500-error, while checking the permissions.
+
+        markup = data.get('markup')
+
+        if markup is None:
+            raise ValidationError('Missing markup')
+
+        lemma_id = data.get('lemma_article')
+
+        if lemma_id is None:
+            raise ValidationError('Missing lemma article')
+
+        try:
+            lemma_article = LemmaArticle.objects.get(pk=data['lemma_article'])
+        except LemmaArticle.DoesNotExist:
+            raise NotFound(f'Lemma Article <{lemma_id}> not found')
+
+        new_version = LemmaArticleVersion(
+            markup=lemma_id, 
+            lemma_article=lemma_article
+        )
+        
+        if hasattr(irsuser, 'editor'):
+            return self.checkEditorPermissions(irsuser.editor, 'POST', new_version)
+        
+        if hasattr(irsuser, 'author'):
+            return self.checkAuthorPermissions(irsuser.author, 'POST', new_version)
 
         return False
 

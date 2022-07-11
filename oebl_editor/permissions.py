@@ -4,7 +4,7 @@ The Logic is defined in the serializers modules. Here are the uttility functions
 """
 from abc import ABC
 from typing import Literal, Set, Union, TYPE_CHECKING
-from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor
+from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor, IrsUser
 from rest_framework import permissions
 from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, get_last_version
 from oebl_editor.models import EditTypes, node_edit_type_mapping
@@ -21,30 +21,51 @@ if TYPE_CHECKING:
 class LemmaArticleVersionPermissions(permissions.BasePermission):
     """Who can get, post, patch and delete an LemmaArticleVersion
     """
-    
+
+    def has_permission(self, request: 'Request', view):
+        user: 'User' = request.user
+        # Super user can do everything
+        if user.is_superuser:
+            return True
+        # Nobody else can delete
+        # This is also in has_object_permission -> checkEditorPermissions and checkAuthorPermissions
+        # but it is stated here also, because if not a super user tries to delete an item, which he/she/* is not assigned,
+        # a 404 is returned. I think 403 is much more clear. 
+        if request.method == 'DELETE':
+            return False
+        if not hasattr(user, 'irsuser'):
+            return False
+        irsuser: 'IrsUser' = user.irsuser
+        return hasattr(irsuser, 'editor') or hasattr(irsuser, 'author')
+
+
     def has_object_permission(self, request: 'Request', view, obj: 'LemmaArticleVersion') -> bool:
         """
         Custom Business Logic For Editor Changes
 
         First check for super user, than for either editor or author in distinct methods        
         """
-        
         user: 'User' = request.user
         new_version = obj
         method: Union[Literal['GET'], Literal['POST'], Literal['DELETE'], Literal['PATCH']] = request.method
         """This is a little overboard, but allows, to better show the narrowing down of possibillites."""
-
         # Super users can do anything        
         if user.is_superuser:
             return self.checkSuperUserPermissions()
 
-        if hasattr(user, 'editor'):
+        if not hasattr(user, 'irsuser'):
+            return False
+        
+        irsuser: 'IrsUser' = user.irsuser
+
+        if hasattr(irsuser, 'editor'):
             return self.checkEditorPermissions(user.editor, method, new_version)
 
-        if hasattr(user, 'author'):
+        if hasattr(irsuser, 'author'):
             return self.checkAuthorPermissions(user.author, method, new_version)
 
         return False
+
 
     def checkSuperUserPermissions(self) -> bool:
         return True
@@ -53,7 +74,6 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
         
         if method == 'DELETE':
             return False
-
         # Checks if the chain LemmaArticleVersion.LemmaArticle.IssueLemma.Editor is the current editor.
         return editor == new_version.lemma_article.issue_lemma.editor
         

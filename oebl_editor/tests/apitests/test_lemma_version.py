@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -12,7 +12,7 @@ from oebl_editor.models import LemmaArticle, LemmaArticleVersion
 from oebl_editor.tests.utilitites.markup import example_markup
 from oebl_editor.tests.apitests._abstract_test_prototype import UserInteractionTestCaseArguments
 from oebl_editor.tests.apitests.test_lemma_article import ArticleDatabaseTestData, UserArticleInteractionTestCaseProptotype
-from oebl_irs_workflow.models import EditTypes, IrsUser
+from oebl_irs_workflow.models import EditTypes, Editor, IrsUser
 
 @dataclass(init=True, frozen=True, order=False)
 class UserArticleVersionInteractionTestCaseArguments(UserInteractionTestCaseArguments):
@@ -178,12 +178,19 @@ class SuccessfullPostOrPatchPrototype(UserArticleVersionInteractionTestCasePropt
 class SuccessfullGetPrototype(UserArticleVersionInteractionTestCaseProptotype):
 
     def test_response_data(self):
-        self.assertListEqual(
-            [version['markup'] for version in self.responseData['results']],
-            [
+        expected_result: List['markup.EditorDocument']
+        if  (not self.user.is_superuser) and (self.arguments.assignment_type is None):
+            expected_result = []
+        else:
+            expected_result = [
                 self.databaseTestData.article_version_1.markup,
                 self.databaseTestData.article_version_2.markup,
             ]
+            
+        self.assertListEqual(
+            [version['markup'] for version in self.responseData['results']],
+            expected_result,
+            "Result should be empty for not assigned 'Not-Super-Users' and contain both versions for all other"
         )
 
 
@@ -264,6 +271,87 @@ class SuperUserDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, A
             assignment_type=None,
             method='DELETE',
             expectedResponseCode=status.HTTP_204_NO_CONTENT,
+            shouldHaveBody=False,
+        )
+
+
+class EditorNotAssignedPostTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            method='POST',
+            shouldHaveBody=False
+        )
+
+
+class EditorNotAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_200_OK,
+            method='GET',
+            shouldHaveBody=True
+        )
+
+
+class EditorNotAssignedPatchWRITETypeTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            method='PATCH',
+            shouldHaveBody=False,
+            edit_type=EditTypes.WRITE,
+        )
+
+
+class EditorNotAssignedPatchANNOTATETypeTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            method='PATCH',
+            shouldHaveBody=False,
+            edit_type=EditTypes.ANNOTATE,
+        )
+
+
+class EditorNotAssignedPatchCOMMENTTypeTestCase(UserArticleInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            method='PATCH',
+            shouldHaveBody=False,
+            edit_type=EditTypes.COMMENT,
+        )
+
+
+class EditorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type=None,
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
             shouldHaveBody=False,
         )
 

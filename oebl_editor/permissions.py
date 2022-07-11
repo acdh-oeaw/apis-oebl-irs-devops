@@ -66,10 +66,10 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
         irsuser: 'IrsUser' = user.irsuser
 
         if hasattr(irsuser, 'editor'):
-            return self.checkEditorPermissions(user.editor, method, new_version)
+            return self.checkEditorPermissions(irsuser.editor, method, new_version)
 
         if hasattr(irsuser, 'author'):
-            return self.checkAuthorPermissions(user.author, method, new_version)
+            return self.checkAuthorPermissions(irsuser.author, method, new_version)
 
         return False
 

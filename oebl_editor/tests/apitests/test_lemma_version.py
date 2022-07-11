@@ -412,3 +412,104 @@ class EditorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCasePropt
             expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
             shouldHaveBody=False,
         )
+
+
+# --------------------------
+# Editor Tests: Assigned
+# --------------------------
+
+
+
+class EditorAssignedPostTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            expectedResponseCode=status.HTTP_201_CREATED,
+            method='POST',
+            shouldHaveBody=True
+        )
+
+
+class EditorAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            expectedResponseCode=status.HTTP_200_OK,
+            method='GET',
+            shouldHaveBody=True
+        )
+
+
+class EditorAssignedRetrieveTestCase(SuccessfullRetrievePrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            expectedResponseCode=status.HTTP_200_OK,
+            method='Retrieve',
+            shouldHaveBody=True
+        )
+
+
+class EditorAssignedPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            expectedResponseCode=status.HTTP_200_OK,
+            method='PATCH',
+            shouldHaveBody=True,
+            edit_type=EditTypes.WRITE,
+        )
+
+
+class EditorAssignedPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            expectedResponseCode=status.HTTP_200_OK,
+            method='PATCH',
+            shouldHaveBody=True,
+            edit_type=EditTypes.ANNOTATE,
+        )
+
+
+class EditorAssignedPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            expectedResponseCode=status.HTTP_200_OK,
+            method='PATCH',
+            shouldHaveBody=True,
+            edit_type=EditTypes.COMMENT,
+        )
+
+
+class EditorAssignedDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type='EDITOR',
+            method='DELETE',
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+        )
+

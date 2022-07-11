@@ -17,7 +17,11 @@ class UserInteractionTestCaseArguments:
 
     UserModel: Union[Type['Editor'], Type['IrsUser'], Type['Author']]
     assignment_type: Optional[Union['EditTypes', Literal['EDITOR']]]
-    method: Union[Literal['GET'], Literal['POST'], Literal['PATCH'], Literal['DELETE']]
+    method: Union[
+        Literal['POST'], Literal['PATCH'], Literal['DELETE'],
+        Literal['GET'], # with no id param
+        Literal['Retrieve'], # Get with id param, named after the django viewset method. 
+        ]
     expectedResponseCode: int
     shouldHaveBody: Optional[bool] = True
 

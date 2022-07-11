@@ -109,6 +109,8 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
             return self.getResponsePOST()
         if self.arguments.method == 'GET':
             return self.getResponseGET()
+        if self.arguments.method == 'Retrieve':
+            return self.getResponseGET(pk=self.target_version.pk)
         if self.arguments.method == 'PATCH':
             return self.getResponsePATCH()
         if self.arguments.method == 'DELETE':
@@ -128,8 +130,11 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
         )
 
     
-    def getResponseGET(self) -> 'Response':
-        return self.client.get(self.slug, format='json')
+    def getResponseGET(self, pk: Optional[int] = None) -> 'Response':
+        return self.client.get(
+            self.slug if pk is None else self.get_slug_with_pk(pk), 
+            format='json'
+        )
 
     
     def getResponsePATCH(self) -> 'Response':
@@ -194,6 +199,16 @@ class SuccessfullGetPrototype(UserArticleVersionInteractionTestCaseProptotype):
         )
 
 
+class SuccessfullRetrievePrototype(UserArticleVersionInteractionTestCaseProptotype):
+
+    def test_response_data(self):    
+        self.assertDictEqual(
+            self.responseData['markup'],  # Testing for markup, since it is a dict :-)
+            self.target_version.markup,
+            "This should return the same markup"
+        )
+
+
 class SuperUserPostTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
     
     @property
@@ -219,6 +234,18 @@ class SuperUserGetTestCase(SuccessfullGetPrototype, APITestCase):
             shouldHaveBody=True
         )
 
+
+class SuperUserRetrieveTestCase(SuccessfullRetrievePrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=IrsUser,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_200_OK,
+            method='Retrieve',
+            shouldHaveBody=True
+        )
 
 class SuperUserPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
     
@@ -300,6 +327,18 @@ class EditorNotAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
             shouldHaveBody=True
         )
 
+
+class EditorNotAssignedRetrieveTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Editor,
+            assignment_type=None,
+            expectedResponseCode=status.HTTP_404_NOT_FOUND,
+            method='Retrieve',
+            shouldHaveBody=False
+        )
 
 class EditorNotAssignedPatchWRITETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     

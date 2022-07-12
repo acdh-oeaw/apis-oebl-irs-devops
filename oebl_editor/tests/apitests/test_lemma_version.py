@@ -667,6 +667,7 @@ class AuthorAssignedWriteFirstPostTestCase(SuccessfullPostOrPatchPrototype, Auth
             is_first_post=True,
         )
 
+
 class AuthorAssignedWriteSecondPostTestCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
     
     @property
@@ -683,7 +684,32 @@ class AuthorAssignedWriteSecondPostTestCase(SuccessfullPostOrPatchPrototype, Aut
 # **************************************************************************
 # Authors with view assignment can neither post first nor suceeding versions.
 # ***************************************************************************
-        
+
+
+class AuthorAssignedViewFirstPostCase(AuthorPostTestPrototype, APITestCase):
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.VIEW,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=True,
+        )
+
+
+class AuthorAssignedViewSecondPostCase(AuthorPostTestPrototype, APITestCase):
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.VIEW,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=False,
+        )
 
 
 

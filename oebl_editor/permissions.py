@@ -9,7 +9,7 @@ from rest_framework.exceptions import ValidationError, NotFound
 
 from oebl_editor.models import LemmaArticleVersion
 from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor, IrsUser
-from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, get_last_version
+from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, get_last_version, check_if_docs_diff_regaring_text
 from oebl_editor.models import EditTypes, LemmaArticle, node_edit_type_mapping
 
     
@@ -94,7 +94,7 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
             raise NotFound(f'Lemma Article <{lemma_id}> not found')
 
         new_version = LemmaArticleVersion(
-            markup=lemma_id, 
+            markup=markup, 
             lemma_article=lemma_article
         )
         
@@ -164,8 +164,13 @@ class LemmaArticleVersionPermissions(permissions.BasePermission):
             in node_edit_type_mapping.items()
             if edit_type not in user_has_this_article_assignments
         )
-        
-        return check_if_docs_diff_regarding_mark_types(prohibited_node_types, new_version, last_version)
+        docs_diff_regarding_mark_types = check_if_docs_diff_regarding_mark_types(prohibited_node_types, new_version.markup, last_version.markup)
+
+        if docs_diff_regarding_mark_types:
+            return False
+
+        # At this point (no WRITE assignment), any change in text, will reagrded as no permission -> False
+        return not check_if_docs_diff_regaring_text(new_version.markup, last_version.markup)
 
     
 class AbstractReadOnlyPermissionViewSetMixin(ABC):

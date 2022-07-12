@@ -132,7 +132,7 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
             self.slug,
             data={
                 'lemma_article': self.databaseTestData.article.pk,
-                'markup': example_markup.get_original_version(),
+                'markup': self.version_2_markup,  # which is the "original version, on no edit type
             },
             format='json',
         )
@@ -650,6 +650,7 @@ class AuthorPostTestPrototype(UserArticleVersionInteractionTestCaseProptotype, A
         )
 
 
+
 # ********************************************************************
 # Authors with write assignemnt can post first and suceeding versions.
 # ********************************************************************
@@ -756,3 +757,38 @@ class AuthorAssignedAnnotateFirstPostCase(AuthorPostTestPrototype, APITestCase):
 #   C   X   +   X
 # 
 # **********************************************************************************************
+
+# Let's the the permitted ones before: 
+
+## Author Annotate Permitted
+
+class AuthorAssignedAnnotateSecondPostCommentCase(AuthorPostTestPrototype, APITestCase):
+    """An author assigned to annotate posts changes in comments"""
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.ANNOTATE,
+            edit_type=EditTypes.COMMENT,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=False,
+        )
+
+
+class AuthorAssignedAnnotateSecondPostWriteCase(AuthorPostTestPrototype, APITestCase):
+    """An author assigned to annotate posts changes in text"""
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.ANNOTATE,
+            edit_type=EditTypes.WRITE,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=False,
+        )
+
+
+

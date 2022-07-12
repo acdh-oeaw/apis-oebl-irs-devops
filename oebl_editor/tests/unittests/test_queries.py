@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 
 from oebl_editor.models import EditTypes, LemmaArticle, LemmaArticleVersion
 
-from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, create_get_query_set_method_filtered_by_user, extract_marks_flat, get_last_version
+from oebl_editor.queries import check_if_docs_diff_regarding_mark_types, create_get_query_set_method_filtered_by_user, extract_marks_flat, get_last_version, extract_texts_flat
 from oebl_editor.tests.utilitites.db_content import VersionGenerator, createLemmaArticle
 from oebl_editor.tests.utilitites.markup import create_a_document
 from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, Editor, IrsUser
@@ -119,6 +119,25 @@ class TestExtractMarksFlat(TestCase):
         self.assertEqual(annotations.__len__(), 1)
         comments = list(extract_marks_flat(doc, 'comment'))
         self.assertEqual(comments.__len__(), 1)
+
+
+class TestTextExtraction(TestCase):
+
+    def test_example(self):
+        document = create_a_document()
+        all_text = list(extract_texts_flat(document))
+        self.assertListEqual(
+            all_text,
+            [
+                "Überschrift 1 ",
+                "Text mit ",
+                "Annotation",
+                "Überschrift 2",
+                "Text mit ",
+                "Kommentar"
+
+            ]
+        )
 
          
          

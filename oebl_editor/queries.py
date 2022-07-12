@@ -61,6 +61,36 @@ def extract_marks_flat(node: 'AbstractBaseNode', tag_name: 'MarkTagName') -> Gen
         yield from extract_marks_flat(child_node, tag_name)
 
 
+def extract_texts_flat(node: 'AbstractBaseNode') -> Generator[str, None, None]:
+    """Run recursivly through None and get all text"""
+    if node.get('type') == 'text':
+        yield node['text']
+    for child_node in  node.get('content', []):
+        yield from extract_texts_flat(child_node)
+
+
+def check_if_docs_diff_regaring_text(
+            doc1: 'EditorDocument',
+            doc2: 'EditorDocument',
+    ) -> bool:
+    """
+    Check if two documents diff regarding text type.
+
+    Doesn't show diffs.
+
+    Very naive!
+    """
+    for text1, text2 in zip_longest(
+            extract_texts_flat(doc1),
+            extract_texts_flat(doc2),
+            fillvalue=None,
+        ):
+        if text1 != text2:
+            return True
+
+    return False
+
+
 def check_if_docs_diff_regarding_mark_types(
         mark_types: Set['MarkTagName'],
         doc1: 'EditorDocument',

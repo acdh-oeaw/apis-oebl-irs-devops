@@ -25,9 +25,15 @@ def get_last_version(lemma_article_version: LemmaArticleVersion, update: bool) -
         query = query.filter(pk=lemma_article_version.pk)
     else:
         query = query.filter(
-                lemma_article = lemma_article_version.lemma_article,
+            lemma_article = lemma_article_version.lemma_article
+        ).order_by('date_modified')
+
+        # If we do have a date_modified (like with PATCH requests), we should check for the version right before the one, we are querying for.
+        if lemma_article_version.date_modified is not None:
+            query = query.filter(
                 date_modified__lt = lemma_article_version.date_modified,
-            ).order_by('date_modified')
+            )
+        
         
     last_version = query.first()
     

@@ -718,6 +718,31 @@ class AuthorAssignedViewSecondPostCase(AuthorPostTestPrototype, APITestCase):
 # *********************************************************************
 
 
+class AuthorAssignedCommentFirstPostCase(AuthorPostTestPrototype, APITestCase):
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=True,
+        )
+
+
+class AuthorAssignedCommentFirstPostCase(AuthorPostTestPrototype, APITestCase):
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=True,
+        )
+
 
 
 # **********************************************************************************************

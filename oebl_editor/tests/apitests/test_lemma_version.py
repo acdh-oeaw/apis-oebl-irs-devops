@@ -758,9 +758,9 @@ class AuthorAssignedAnnotateFirstPostCase(AuthorPostTestPrototype, APITestCase):
 # 
 # **********************************************************************************************
 
-# Let's do the the permitted ones before: 
+# Let's do the the missing assignments before: 
 
-## Author Annotate Permitted
+## Author Annotate 
 
 class AuthorAssignedAnnotateSecondPostCommentCase(AuthorPostTestPrototype, APITestCase):
     """An author assigned to annotate posts changes in comments"""
@@ -791,4 +791,31 @@ class AuthorAssignedAnnotateSecondPostWriteCase(AuthorPostTestPrototype, APITest
         )
 
 
+## Author Comment
 
+class AuthorAssignedCommentSecondPostAnnotateCase(AuthorPostTestPrototype, APITestCase):
+    """An author assigned to comment, posts changes in annotations"""
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            edit_type=EditTypes.ANNOTATE,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=False,
+        )
+
+
+class AuthorAssignedCommentSecondPostWriteCase(AuthorPostTestPrototype, APITestCase):
+    """An author assigned to comment, posts changes in text"""
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            edit_type=EditTypes.WRITE,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            is_first_post=False,
+        )

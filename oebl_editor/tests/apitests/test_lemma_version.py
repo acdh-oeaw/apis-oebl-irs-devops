@@ -648,6 +648,11 @@ class AuthorPostTestPrototype(UserArticleVersionInteractionTestCaseProptotype, A
             article=test_data.article,
             article_version_1=version_1,
         )
+
+
+# ********************************************************************
+# Authors with write assignemnt can post first and suceeding versions.
+# ********************************************************************
         
 
 class AuthorAssignedWriteFirstPostTestCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
@@ -673,3 +678,30 @@ class AuthorAssignedWriteSecondPostTestCase(SuccessfullPostOrPatchPrototype, Aut
             shouldHaveBody=True,
             is_first_post=False,
         )
+
+
+# **************************************************************************
+# Authors with view assignment can neither post first nor suceeding versions.
+# ***************************************************************************
+        
+
+
+
+# *********************************************************************
+# Authors with annotate or comment assignment not post first versions.
+# *********************************************************************
+
+
+
+
+# **********************************************************************************************
+# Authors with annotate or comment assignment can post suceeding versions in their own edit type:
+# 
+# A = Annotate, C = Comment, W = Write
+# 
+#       A   C   W
+# -------------------      
+#   A   +   X   X
+#   C   X   +   X
+# 
+# **********************************************************************************************

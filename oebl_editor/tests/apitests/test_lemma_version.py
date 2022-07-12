@@ -731,13 +731,13 @@ class AuthorAssignedCommentFirstPostCase(AuthorPostTestPrototype, APITestCase):
         )
 
 
-class AuthorAssignedCommentFirstPostCase(AuthorPostTestPrototype, APITestCase):
+class AuthorAssignedAnnotateFirstPostCase(AuthorPostTestPrototype, APITestCase):
 
     @property
     def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
         return AuthorPostsArticleVersionTestCaseArguments(
             UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
+            assignment_type=EditTypes.ANNOTATE,
             expectedResponseCode=status.HTTP_403_FORBIDDEN,
             shouldHaveBody=False,
             is_first_post=True,

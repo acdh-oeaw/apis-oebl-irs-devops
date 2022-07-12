@@ -758,7 +758,7 @@ class AuthorAssignedAnnotateFirstPostCase(AuthorPostTestPrototype, APITestCase):
 # 
 # **********************************************************************************************
 
-# Let's the the permitted ones before: 
+# Let's do the the permitted ones before: 
 
 ## Author Annotate Permitted
 

@@ -5,6 +5,8 @@ from typing import Union, Type, Literal, Optional, TYPE_CHECKING
 
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
+from rest_framework import status
+
 
 from oebl_editor.tests.utilitites.db_content import create_user
 
@@ -15,14 +17,14 @@ if TYPE_CHECKING:
 @dataclass(init=True, frozen=True, order=False)
 class UserInteractionTestCaseArguments:
 
-    UserModel: Union[Type['Editor'], Type['IrsUser'], Type['Author']]
-    assignment_type: Optional[Union['EditTypes', Literal['EDITOR']]]
+    UserModel: Union[Type['Editor'], Type['IrsUser'], Type['Author']] = 'IrsUser'
+    assignment_type: Optional[Union['EditTypes', Literal['EDITOR']]] = None
     method: Union[
         Literal['POST'], Literal['PATCH'], Literal['DELETE'],
         Literal['GET'], # with no id param
         Literal['Retrieve'], # Get with id param, named after the django viewset method. 
-        ]
-    expectedResponseCode: int
+        ] = 'GET'
+    expectedResponseCode: int = status.HTTP_200_OK
     shouldHaveBody: Optional[bool] = True
 
 

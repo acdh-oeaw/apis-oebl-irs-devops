@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Literal, Optional
 from rest_framework.response import Response
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -163,7 +163,7 @@ class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTest
 
 
 
-class SuccessfullPostOrPatchPrototype(UserArticleVersionInteractionTestCaseProptotype):
+class SuccessfullPostOrPatchPrototype:
 
     def test_response_data(self):
         self.assertIsNotNone(
@@ -222,7 +222,7 @@ class SuccessfullRetrievePrototype(UserArticleVersionInteractionTestCaseProptoty
 # ----------------
 
 
-class SuperUserPostTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class SuperUserPostTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -260,7 +260,7 @@ class SuperUserRetrieveTestCase(SuccessfullRetrievePrototype, APITestCase):
             shouldHaveBody=True
         )
 
-class SuperUserPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class SuperUserPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -274,7 +274,7 @@ class SuperUserPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCa
         )
 
 
-class SuperUserPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class SuperUserPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -288,7 +288,7 @@ class SuperUserPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, APITes
         )
 
 
-class SuperUserPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class SuperUserPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -420,7 +420,7 @@ class EditorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCasePropt
 
 
 
-class EditorAssignedPostTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class EditorAssignedPostTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -459,7 +459,7 @@ class EditorAssignedRetrieveTestCase(SuccessfullRetrievePrototype, APITestCase):
         )
 
 
-class EditorAssignedPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class EditorAssignedPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -473,7 +473,7 @@ class EditorAssignedPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, APIT
         )
 
 
-class EditorAssignedPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class EditorAssignedPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -487,7 +487,7 @@ class EditorAssignedPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, A
         )
 
 
-class EditorAssignedPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, APITestCase):
+class EditorAssignedPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
     
     @property
     def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
@@ -611,4 +611,65 @@ class AuthorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCasePropt
             method='DELETE',
             expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
             shouldHaveBody=False,
+        )
+
+
+# --------------------------
+# Author Tests: Assigned
+# --------------------------
+
+
+@dataclass(init=True, frozen=True, order=False)
+class AuthorPostsArticleVersionTestCaseArguments(UserArticleVersionInteractionTestCaseArguments):
+    is_first_post: bool = True
+    method: Literal['POST'] = 'POST'
+
+
+class AuthorPostTestPrototype(UserArticleVersionInteractionTestCaseProptotype, ABC):
+
+    @property
+    @abstractmethod
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        raise NotImplemented
+
+    def setUpDataBaseTestData(self) -> 'ArticleVersionDatabaseTestData':
+        test_data = super().setUpDataBaseTestData()
+
+        if self.arguments.is_first_post:
+            return test_data
+
+        version_1 = LemmaArticleVersion.objects.create(
+            lemma_article = test_data.article,
+            markup=example_markup.get_original_version()
+        )
+
+        return ArticleVersionDatabaseTestData(
+            issue=test_data.issue,
+            article=test_data.article,
+            article_version_1=version_1,
+        )
+        
+
+class AuthorAssignedWriteFirstPostTestCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.WRITE,
+            expectedResponseCode=status.HTTP_201_CREATED,
+            shouldHaveBody=True,
+            is_first_post=True,
+        )
+
+class AuthorAssignedWriteSecondPostTestCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
+    
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.WRITE,
+            expectedResponseCode=status.HTTP_201_CREATED,
+            shouldHaveBody=True,
+            is_first_post=False,
         )

@@ -837,7 +837,6 @@ class AuthorAssignedAnnotateSecondPostAnnotateCase(SuccessfullPostOrPatchPrototy
         )
 
 
-# Author Assigned Test Test Cases
 class AuthorAssignedCommentSecondPostCommentCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
     " An author, assigned to comment, changes comments."
 
@@ -850,4 +849,67 @@ class AuthorAssignedCommentSecondPostCommentCase(SuccessfullPostOrPatchPrototype
             expectedResponseCode=status.HTTP_201_CREATED,
             shouldHaveBody=True,
             is_first_post=False,
+        )
+
+
+
+# ****************************************
+# Authors With Assignements Get & Retrieve
+# ****************************************
+
+
+class AuthorAssignedAnnotateGet(SuccessfullGetPrototype, APITestCase):
+    """An author assigned to annotate for an article can view all versions of that article"""
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.ANNOTATE,
+            expectedResponseCode=status.HTTP_200_OK,
+            shouldHaveBody=True,
+            method='GET',
+        )
+
+
+class AuthorAssignedCommentGet(SuccessfullGetPrototype, APITestCase):
+    """An author assigned to comment for an article can view all versions of that article"""
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            expectedResponseCode=status.HTTP_200_OK,
+            shouldHaveBody=True,
+            method='GET',
+        )
+
+
+
+class AuthorAssignedAnnotateRetrieve(SuccessfullRetrievePrototype, APITestCase):
+    """An author assigned to annotate for an article can retrieve a version of that article"""
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.ANNOTATE,
+            expectedResponseCode=status.HTTP_200_OK,
+            shouldHaveBody=True,
+            method='Retrieve',
+        )
+
+
+class AuthorAssignedCommentRetrieve(SuccessfullRetrievePrototype, APITestCase):
+    """An author assigned to comment for an article can retrieve a version of that article"""
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            expectedResponseCode=status.HTTP_200_OK,
+            shouldHaveBody=True,
+            method='Retrieve',
         )

@@ -953,3 +953,36 @@ class AuthorAssignedCommentPATCHCommentCase(SuccessfullPostOrPatchPrototype, Aut
             method='PATCH',
             update=True,
         )
+
+
+# ********************************
+# Authors With Assignements Delete
+# ********************************
+
+
+class AuthorAssignedAnnotateDeleteCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    " An author, assigned to annotate, can not delete versions of */her/his articles"
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.ANNOTATE,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            method='DELETE',
+        )
+
+
+class AuthorAssignedCommentDeleteCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
+    " An author, assigned to annotate, can not delete versions of */her/his articles"
+
+    @property
+    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
+        return UserArticleVersionInteractionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            expectedResponseCode=status.HTTP_403_FORBIDDEN,
+            shouldHaveBody=False,
+            method='DELETE',
+        )

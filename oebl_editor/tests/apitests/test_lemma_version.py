@@ -913,3 +913,43 @@ class AuthorAssignedCommentRetrieve(SuccessfullRetrievePrototype, APITestCase):
             shouldHaveBody=True,
             method='Retrieve',
         )
+
+
+
+# ****************************************
+# Authors With Assignements Patch
+# ****************************************
+
+
+class AuthorAssignedAnnotatePatchAnnotateCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
+    " An author, assigned to annotate, changes annotations."
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.ANNOTATE,
+            edit_type=EditTypes.ANNOTATE,
+            expectedResponseCode=status.HTTP_200_OK,
+            shouldHaveBody=True,
+            is_first_post=False,
+            method='PATCH',
+            update=True,
+        )
+
+
+class AuthorAssignedCommentPATCHCommentCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
+    " An author, assigned to comment, changes comments."
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            edit_type=EditTypes.COMMENT,
+            expectedResponseCode=status.HTTP_200_OK,
+            shouldHaveBody=True,
+            is_first_post=False,
+            method='PATCH',
+            update=True,
+        )

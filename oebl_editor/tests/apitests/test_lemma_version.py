@@ -820,7 +820,7 @@ class AuthorAssignedCommentSecondPostWriteCase(AuthorPostTestPrototype, APITestC
             is_first_post=False,
         )
 
-# Author Assigned Test Test Cases
+# Author Assigned Test Cases
 
 class AuthorAssignedAnnotateSecondPostAnnotateCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
     " An author, assigned to annotate, changes annotations."
@@ -831,6 +831,22 @@ class AuthorAssignedAnnotateSecondPostAnnotateCase(SuccessfullPostOrPatchPrototy
             UserModel=Author,
             assignment_type=EditTypes.ANNOTATE,
             edit_type=EditTypes.ANNOTATE,
+            expectedResponseCode=status.HTTP_201_CREATED,
+            shouldHaveBody=True,
+            is_first_post=False,
+        )
+
+
+# Author Assigned Test Test Cases
+class AuthorAssignedCommentSecondPostCommentCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
+    " An author, assigned to comment, changes comments."
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.COMMENT,
+            edit_type=EditTypes.COMMENT,
             expectedResponseCode=status.HTTP_201_CREATED,
             shouldHaveBody=True,
             is_first_post=False,

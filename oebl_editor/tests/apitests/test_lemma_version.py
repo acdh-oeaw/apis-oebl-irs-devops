@@ -177,7 +177,7 @@ class SuccessfullPostOrPatchPrototype:
         )
         self.assertDictEqual(
             self.responseData.get('markup'),
-            example_markup.get_original_version() if self.arguments.method == 'POST' else self.version_2_markup,
+            self.version_2_markup,
         )
 
     def test_database_data(self):
@@ -747,7 +747,7 @@ class AuthorAssignedAnnotateFirstPostCase(AuthorPostTestPrototype, APITestCase):
 
 
 # **********************************************************************************************
-# Authors with annotate or comment assignment can post suceeding versions in their own edit type:
+# Authors with annotate or comment assignment can post succeeding versions in their own edit type:
 # 
 # A = Annotate, C = Comment, W = Write
 # 
@@ -808,7 +808,7 @@ class AuthorAssignedCommentSecondPostAnnotateCase(AuthorPostTestPrototype, APITe
 
 
 class AuthorAssignedCommentSecondPostWriteCase(AuthorPostTestPrototype, APITestCase):
-    """An author assigned to comment, posts changes in text"""
+    """An author, assigned to comment, posts changes in text"""
     @property
     def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
         return AuthorPostsArticleVersionTestCaseArguments(
@@ -817,5 +817,21 @@ class AuthorAssignedCommentSecondPostWriteCase(AuthorPostTestPrototype, APITestC
             edit_type=EditTypes.WRITE,
             expectedResponseCode=status.HTTP_403_FORBIDDEN,
             shouldHaveBody=False,
+            is_first_post=False,
+        )
+
+# Author Assigned Test Test Cases
+
+class AuthorAssignedAnnotateSecondPostAnnotateCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
+    " An author, assigned to annotate, changes annotations."
+
+    @property
+    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
+        return AuthorPostsArticleVersionTestCaseArguments(
+            UserModel=Author,
+            assignment_type=EditTypes.ANNOTATE,
+            edit_type=EditTypes.ANNOTATE,
+            expectedResponseCode=status.HTTP_201_CREATED,
+            shouldHaveBody=True,
             is_first_post=False,
         )

@@ -130,6 +130,16 @@ class IssueLemmaSerializer(serializers.ModelSerializer):
     serialization = serializers.SerializerMethodField(method_name="get_serialization")
     lemma = LemmaSerializer()
 
+    authors = serializers.SerializerMethodField(method_name='get_assigned_authors')
+
+    def get_assigned_authors(self, issue_lemma: 'IssueLemma') -> List[int]:
+        return [
+            assignment.author_id
+            for assignment 
+            in issue_lemma.authorissuelemmaassignment_set.all()
+        ]
+
+
     @extend_schema_field(IssueLemmaSerializerOpenApi(many=True))
     def get_serialization(self, object):
         if object.serialization:

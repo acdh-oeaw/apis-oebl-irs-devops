@@ -5,20 +5,39 @@ Summary of what who with what is allowed to do.
 ## Articles
 
 ### Super users can:
-- View all 
+- View all
 - Retrieve all
-- Post all
+- Post
 - Patch all
 - Delete all
 
-### Authors and editors can:
+### Editors can:
 
-- View their assigned
-- Retrieve their assigned
-- Not Post
+- View assigned articles
+- Not view not assigned articles
+- Retrieve assigned articles
+- Not retrieve not assigned articles
+- Not Post articles
 - Not Patch
+    - assigned articles
+    - not assigned articles
 - Not Delete
+    - assigned articles
+    - not assigned articles
 
+### Authors can:
+
+- View assigned articles
+- Not view not assigned articles
+- Retrieve assigned articles
+- Not retrieve not assigned articles
+- Not Post articles
+- Not Patch
+    - assigned articles
+    - not assigned articles
+- Not Delete
+    - assigned articles
+    - not assigned articles
 
 ## Versions
 
@@ -30,33 +49,27 @@ Summary of what who with what is allowed to do.
 - Patch all
 - Delete all
 
-### Authors and editors can:
+### Authors can:
 
-- View all versions of their assigned articles 
-- Retrieve all versions of their assigned articles 
-- Post versions for their assigned articles
-- Patch **LATEST** versions of their assigned articles
-- Not Delete versions
+- View all versions of their assigned articles.
+- Retrieve all versions of their assigned articles.
+- Can not retrieve versions from articles, they are not assigned to.
+- Post versions for their assigned articles.
+- Can not post versions for articles, they are not assigned to.
+- Patch **LATEST** versions of their assigned articles.
+- Can not PATCH not latest versions of their assigned articles.
+- Can not PATCH any versions of article, they are not assigned to.
+- Not Delete any versions.
 
-
-## Assignments
-
-### Super users can:
-- View all 
-- Retrieve all
-- Post all
-- Patch all
-- Delete all
 
 ### Editors can:
-- View all assignments of their assigned articles 
-- Retrieve all assignments of their assigned articles 
-- Post assignments for their assigned articles
-- Patch assignments of their assigned articles
-- Delete assignments of their assigned articles
 
-### Authors can:
-- View all assignments of their assigned articles 
-- Retrieve all assignments of their assigned articles 
-- Not Post
-- Not Delete
+- View all versions of their assigned articles.
+- Retrieve all versions of their assigned articles.
+- Can not retrieve versions from articles, they are not assigned to.
+- Post versions for their assigned articles.
+- Can not post versions for articles, they are not assigned to.
+- Patch **LATEST** versions of their assigned articles.
+- Can not PATCH not latest versions of their assigned articles.
+- Can not PATCH any versions of article, they are not assigned to.
+- Not Delete any versions.

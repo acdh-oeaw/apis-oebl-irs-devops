@@ -1,988 +1,478 @@
+"""
+
+# Super users can:
+- View all 
+- Retrieve all
+- Post all
+- Patch all
+- Delete all
+
+# Authors can:
+
+- View all versions of their assigned articles.
+- Retrieve all versions of their assigned articles.
+- Can not retrieve versions from articles, they are not assigned to.
+- Post versions for their assigned articles.
+- Can not post versions for articles, they are not assigned to.
+- Patch **LATEST** versions of their assigned articles.
+- Can not PATCH not latest versions of their assigned articles.
+- Can not PATCH any versions of article, they are not assigned to.
+- Not Delete any versions.
 
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import List, Literal, Optional
-from rest_framework.response import Response
+# Editors can:
+
+- View all versions of their assigned articles.
+- Retrieve all versions of their assigned articles.
+- Can not retrieve versions from articles, they are not assigned to.
+- Post versions for their assigned articles.
+- Can not post versions for articles, they are not assigned to.
+- Patch **LATEST** versions of their assigned articles.
+- Can not PATCH not latest versions of their assigned articles.
+- Can not PATCH any versions of article, they are not assigned to.
+- Not Delete any versions.
+
+"""
+from typing import List
+from oebl_editor.tests.utilitites.markup import create_a_document
 from rest_framework.test import APITestCase
 from rest_framework import status
 
-from oebl_editor import markup
 from oebl_editor.models import LemmaArticle, LemmaArticleVersion
-from oebl_editor.tests.utilitites.markup import example_markup
-from oebl_editor.tests.apitests._abstract_test_prototype import UserInteractionTestCaseArguments
-from oebl_editor.tests.apitests.test_lemma_article import ArticleDatabaseTestData, UserArticleInteractionTestCaseProptotype
 from oebl_irs_workflow.models import Author, EditTypes, Editor, IrsUser
 
-# -----------------------
-# Arguments And Test Data
-# -----------------------
-
-@dataclass(init=True, frozen=True, order=False)
-class UserArticleVersionInteractionTestCaseArguments(UserInteractionTestCaseArguments):
-    update: bool = False
-    """If the test updates an existing version, or creates a new one"""
-    edit_type: Optional[EditTypes] = None
-    """What kind of changes are going to be made"""
+from oebl_editor.tests.utilitites.db_content import SetUpUserMixin, VersionGenerator, create_and_assign_article, create_article
 
 
-@dataclass(init=True, frozen=True, order=False)
-class ArticleVersionDatabaseTestData(ArticleDatabaseTestData):
-    article: 'LemmaArticle'
-    article_version_1: Optional['LemmaArticleVersion'] = None
-    article_version_2: Optional['LemmaArticleVersion'] = None
+class SuperUserPostCase(SetUpUserMixin, APITestCase):
+    """Super user can post versions to articles"""
+    user: IrsUser
+    article: LemmaArticle
 
-# ---------------
-# Test Prototypes
-# ---------------
+    def setUp(self) -> None:
+        self.setUpUser()
+        self.article = create_article()
 
-
-class UserArticleVersionInteractionTestCaseProptotype(UserArticleInteractionTestCaseProptotype, ABC):
-
-    @property
-    @abstractmethod
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        raise NotImplementedError
-
-    databaseTestData: ArticleVersionDatabaseTestData
-
-    @property
-    def slug(self) -> str:
-        return '/editor/api/v1/lemma-article-version/'
-
-    @property
-    def version_2_markup(self) -> 'markup.EditorDocument':
-        if self.arguments.edit_type is None:
-            return example_markup.get_original_version()
-        if self.arguments.edit_type == EditTypes.VIEW:
-            return example_markup.get_original_version()
-        if self.arguments.edit_type == EditTypes.ANNOTATE:
-            return example_markup.get_changed_annotations()
-        if self.arguments.edit_type == EditTypes.COMMENT:
-            return example_markup.get_changed_comment()
-        if self.arguments.edit_type == EditTypes.WRITE:
-            return example_markup.get_changed_text()
-        raise NotImplementedError(rf'Edit Type <{self.arguments.edit_type}> is not impemented.')
-
-
-    @property
-    def target_version(self) -> 'LemmaArticleVersion':
-        target_version: 'LemmaArticleVersion'
-        if self.arguments.method == 'POST':
-            return LemmaArticleVersion.objects.filter(pk=self.responseData['id']).first()
-        elif self.arguments.update:
-            target_version = self.databaseTestData.article_version_1
-        else:
-            target_version = self.databaseTestData.article_version_2
-        if target_version is None:
-            raise RuntimeError(
-                rf'Missconfigured Test <{self.arguments.update=} led to None target version')
-        return target_version
-
-    def setUpDataBaseTestData(self) -> 'ArticleVersionDatabaseTestData':
-        
-        # We don't call  super, since on POST we need an base article,
-        # contrary to the parent class.
-        article = self.setUpAssignmentsAndCreateArticle()
-        if self.arguments.method == 'POST':
-            return ArticleVersionDatabaseTestData(article=article, issue=article.issue_lemma)
-        version_1 = LemmaArticleVersion.objects.create(
-            lemma_article = article,
-            markup=example_markup.get_original_version()
-        )
-
-        if self.arguments.update:
-            return ArticleVersionDatabaseTestData(
-                issue=article.issue_lemma,
-                article=article,
-                article_version_1=version_1,
-            )
-        
-        version_2 = LemmaArticleVersion.objects.create(
-            lemma_article = article,
-            markup = self.version_2_markup,
-        )
-
-        return ArticleVersionDatabaseTestData(
-                issue=article.issue_lemma,
-                article=article,
-                article_version_1=version_1,
-                article_version_2=version_2,
-            )
-
-    def getResponse(self) -> 'Response':
-        # Logic gets a little more complex then with articles,
-        # so splitting it in methods
-        if self.arguments.method == 'POST':
-            return self.getResponsePOST()
-        if self.arguments.method == 'GET':
-            return self.getResponseGET()
-        if self.arguments.method == 'Retrieve':
-            return self.getResponseGET(pk=self.target_version.pk)
-        if self.arguments.method == 'PATCH':
-            return self.getResponsePATCH()
-        if self.arguments.method == 'DELETE':
-            return self.getResponseDELETE()
-
-        raise NotImplementedError(rf'Method <{self.arguments.method}> is not implemented. Put?')
-
-
-    def getResponsePOST(self) -> 'Response':
-        return self.client.post(
-            self.slug,
+    def test_post_version(self):
+        markup = {}
+        response = self.client.post(
+            '/editor/api/v1/lemma-article-version/',
             data={
-                'lemma_article': self.databaseTestData.article.pk,
-                'markup': self.version_2_markup,  # which is the "original version, on no edit type
+                'lemma_article': self.article.pk,
+                'markup': markup,
             },
             format='json',
         )
 
-    
-    def getResponseGET(self, pk: Optional[int] = None) -> 'Response':
-        return self.client.get(
-            self.slug if pk is None else self.get_slug_with_pk(pk), 
-            format='json'
-        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        version_id = response.json().get('id')
+        self.assertIsInstance(version_id, int)
+        version_from_database: LemmaArticleVersion = LemmaArticleVersion.objects.get(
+            pk=version_id)
+        self.assertIsNotNone(version_from_database)
+        self.assertDictEqual(version_from_database.markup, markup)
 
-    
-    def getResponsePATCH(self) -> 'Response':
-        return self.client.patch(
-            self.get_slug_with_pk(self.target_version.pk),
+
+class EditorPostCase(SetUpUserMixin, APITestCase):
+    """Editors can: 
+- Post versions for their assigned articles
+- Can not post versions for their assigned articles
+"""
+
+    user: Editor
+    assigned_article: LemmaArticle
+    not_assigned_article: LemmaArticle
+
+    def setUp(self) -> None:
+        self.setUpUser()
+        self.not_assigned_article = create_article()
+        self.assigned_article = create_and_assign_article(self.user)
+
+    def test_post_version_to_assigned_article(self):
+        """Editors and authors can post versions for their assigned articles."""
+        markup = {}
+        response = self.client.post(
+            '/editor/api/v1/lemma-article-version/',
             data={
-                'markup': self.version_2_markup,
+                'lemma_article': self.assigned_article.pk,
+                'markup': markup,
             },
             format='json',
-        ) 
+        )
 
-    
-    def getResponseDELETE(self) -> 'Response':
-        return self.client.delete(
-            self.get_slug_with_pk(self.databaseTestData.article_version_1.pk),
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        version_id = response.json().get('id')
+        self.assertIsInstance(version_id, int)
+        version_from_database: LemmaArticleVersion = LemmaArticleVersion.objects.get(
+            pk=version_id)
+        self.assertIsNotNone(version_from_database)
+        self.assertDictEqual(version_from_database.markup, markup)
+
+    def test_post_version_to_not_assigned_article(self):
+        """Editors and authors can not post versions for articles, they are not assigned too."""
+        markup = {}
+        response = self.client.post(
+            '/editor/api/v1/lemma-article-version/',
+            data={
+                'lemma_article': self.not_assigned_article.pk,
+                'markup': markup,
+            },
             format='json',
         )
 
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
 
-class SuccessfullPostOrPatchPrototype:
+class AuthorPostCase(EditorPostCase):
+    """
+For POST this is the same as for editors
+Authors can: 
+- Post versions for their assigned articles
+- Can not post versions for their assigned articles
+"""
+    user: Author
 
-    def test_response_data(self):
-        self.assertIsNotNone(
-            self.responseData,
-            rf'<{self.arguments.method}> a ArticleVersion should return the json of the content.'
+
+class SuperUserCase(SetUpUserMixin, APITestCase):
+    """# Super users can:
+- View all 
+- Retrieve all
+(- Post all)
+- Patch all
+- Delete all
+    """
+    user: IrsUser
+    article_version: LemmaArticleVersion
+    markup: dict
+
+    def setUp(self) -> None:
+        self.setUpUser()
+        self.markup = {}
+        self.article_version = LemmaArticleVersion.objects.create(
+            lemma_article=create_article(),
+            markup=self.markup,
         )
+
+    def test_list(self):
+        """Super users can view all"""
+        response = self.client.get('/editor/api/v1/lemma-article-version/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        versions: List[dict] = response.json().get('results')
+        self.assertEqual(versions.__len__(), 1)
+        version = versions[0]
+        self.assertEqual(version.get('id'), self.article_version.pk)
+
+    def test_retrieve(self):
+        """Super users can retrieve all"""
+        response = self.client.get(
+            f'/editor/api/v1/lemma-article-version/{self.article_version.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        version: dict = response.json()
+        self.assertEqual(version.get('id'), self.article_version.pk)
+
+    def test_patch(self):
+        """Super users can patch all"""
+        patched_markup = {'patched': 'markup'}
+        assert patched_markup != self.markup
+        response = self.client.patch(
+            f'/editor/api/v1/lemma-article-version/{self.article_version.pk}/',
+            data={
+                'markup': patched_markup,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.article_version.refresh_from_db()
+        self.assertDictEqual(self.article_version.markup, patched_markup)
+
+    def test_delete(self):
+        """Super users can delete"""
+        response = self.client.delete(
+            f'/editor/api/v1/lemma-article-version/{self.article_version.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        with self.assertRaises(LemmaArticleVersion.DoesNotExist):
+            LemmaArticleVersion.objects.get(pk=self.article_version.pk)
+
+
+class EditorTestCase(SetUpUserMixin, APITestCase):
+    """Authors can:
+
+- View all versions of their assigned articles.
+- Retrieve all versions of their assigned articles.
+- Can not retrieve versions from articles, they are not assigned to.
+(- Post versions for their assigned articles.)
+(- Can not post versions for articles, they are not assigned to.)
+- Patch **LATEST** versions of their assigned articles.
+- Can not PATCH not latest versions of their assigned articles.
+- Can not PATCH any versions of article, they are not assigned to.
+- Not Delete any versions."""
+
+    user: Editor
+    not_assigned_version: LemmaArticleVersion
+    first_assigned_version: LemmaArticleVersion
+    latest_assigned_version: LemmaArticleVersion
+    markup_v1: dict
+    markup_v2: dict
+
+    def setUp(self) -> None:
+        self.setUpUser()
+        article_not_assigned = create_article()
+        markup_generator = dict
+        self.markup_v1 = markup_generator()
+        self.markup_v2 = {'patched': 'markup'}
+        self.not_assigned_version = LemmaArticleVersion.objects.create(
+            lemma_article=article_not_assigned, markup=self.markup_v1)
+        article_assigned = create_and_assign_article(self.user)
+
+        version_generator = VersionGenerator()
+        version_generator.add_versions_to_article(
+            article=article_assigned, n=2, markup_generator=dict)
+        self.first_assigned_version, self.latest_assigned_version = version_generator.versions
+
+        assert self.first_assigned_version.date_created < self.latest_assigned_version.date_created
+        assert self.first_assigned_version.date_modified < self.latest_assigned_version.date_modified
+
+    def test_list(self):
+        response = self.client.get('/editor/api/v1/lemma-article-version/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        versions: List[dict] = response.json().get('results')
+        self.assertEqual(versions.__len__(), 2)
+        version_ids = {version.get('id') for version in versions}
+        self.assertSetEqual(
+            version_ids, {self.first_assigned_version.pk, self.latest_assigned_version.pk, })
+        self.assertNotIn(self.not_assigned_version.pk, version_ids)
+
+    def test_retrieve_assigned(self):
+        response = self.client.get(
+            f'/editor/api/v1/lemma-article-version/{self.first_assigned_version.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json().get(
+            'id'), self.first_assigned_version.pk)
+
+        response = self.client.get(
+            f'/editor/api/v1/lemma-article-version/{self.latest_assigned_version.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json().get(
+            'id'), self.latest_assigned_version.pk)
+
+    def test_retrieve_not_assigned(self):
+        response = self.client.get(
+            f'/editor/api/v1/lemma-article-version/{self.not_assigned_version.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_patch_latest_assigned(self):
+        response = self.client.patch(
+            f'/editor/api/v1/lemma-article-version/{self.latest_assigned_version.pk}/',
+            data={
+                'markup': self.markup_v2,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.latest_assigned_version.refresh_from_db()
+        self.assertDictEqual(
+            self.markup_v2, self.latest_assigned_version.markup)
+
+    def test_patch_not_latest_assigned(self):
+        response = self.client.patch(
+            f'/editor/api/v1/lemma-article-version/{self.first_assigned_version.pk}/',
+            data={
+                'markup': self.markup_v2,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.first_assigned_version.refresh_from_db()
+        self.assertDictEqual(
+            self.markup_v1, self.first_assigned_version.markup)
+
+    def test_patch_not_assigned(self):
+        response = self.client.patch(
+            f'/editor/api/v1/lemma-article-version/{self.not_assigned_version.pk}/',
+            data={
+                'markup': self.markup_v2,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.first_assigned_version.refresh_from_db()
+        self.assertDictEqual(
+            self.markup_v1, self.first_assigned_version.markup)
+
+    def test_delete(self):
+
         self.assertEqual(
-            self.responseData.get('lemma_article'), 
-            self.databaseTestData.article.pk,
-            rf'<{self.arguments.method}> a ArticleVersion should contain the correct article\'s primary key.'
+            status.HTTP_404_NOT_FOUND,
+            self.client.delete(
+                f'/editor/api/v1/lemma-article-version/{self.not_assigned_version}/').status_code
         )
+        self.assertIsNotNone(LemmaArticleVersion.objects.get(
+            pk=self.not_assigned_version.pk))
+
+        self.assertEqual(
+            status.HTTP_404_NOT_FOUND,
+            self.client.delete(
+                f'/editor/api/v1/lemma-article-version/{self.first_assigned_version}/').status_code
+        )
+        self.assertIsNotNone(LemmaArticleVersion.objects.get(
+            pk=self.first_assigned_version.pk))
+
+        self.assertEqual(
+            status.HTTP_404_NOT_FOUND,
+            self.client.delete(
+                f'/editor/api/v1/lemma-article-version/{self.latest_assigned_version}/').status_code
+        )
+        self.assertIsNotNone(LemmaArticleVersion.objects.get(
+            pk=self.latest_assigned_version.pk))
+
+
+class AuthorTestCase(EditorTestCase):
+    """Authors can do the same as Editors:
+
+- View all versions of their assigned articles.
+- Retrieve all versions of their assigned articles.
+- Can not retrieve versions from articles, they are not assigned to.
+(- Post versions for their assigned articles.)
+(- Can not post versions for articles, they are not assigned to.)
+- Patch **LATEST** versions of their assigned articles.
+- Can not PATCH not latest versions of their assigned articles.
+- Can not PATCH any versions of article, they are not assigned to.
+- Not Delete any versions."""
+
+    user: Author
+
+
+class NoRestrictionsOnMarkupTestCase(SetUpUserMixin, APITestCase):
+    """
+    In the first implementation, the server checked that authors would only change,
+    what they have been assigned too. We decided to move this restrictions entirely
+    to the frontend, hence anything is allowed.
+
+    This test is part of TDD, to make sure all restrictions are removed.
+
+    When all restrictions are removed, 
+    this test will be pointless as checking, 
+    that you can use the word "unicorn" in documents, 
+    but will be most likely not removed,
+    to remember that fun but needless validation code.
+    """
+    user: Author
+    version_view: LemmaArticleVersion
+    version_comment: LemmaArticleVersion
+    version_annotate: LemmaArticleVersion
+    version_write: LemmaArticleVersion
+
+    n_annotations = 1
+    comment_text = 'comment'
+
+    def setUp(self) -> None:
+        self.setUpUser()
+        # It has 35 degrees outside. I am lazy.
+        self.version_view, self.version_comment, self.version_annotate, self.version_write = [
+            VersionGenerator().add_versions_to_article(
+                article=create_and_assign_article(self.user, edit_type),
+                n=1,
+                markup_generator=lambda: create_a_document(
+                    number_of_annotations=self.n_annotations, comment_text=self.comment_text)
+            ).versions[0]
+            for edit_type in EditTypes
+        ]
+
+    def test_markup_can_be_anything(self):
+        response = self.client.patch(
+            f'/editor/api/v1/lemma-article-version/{self.version_view.pk}/',
+            data={
+                'markup': False,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.version_view.refresh_from_db()
+        self.assertEqual(self.version_view.markup, False)
+
+        response = self.client.patch(
+            f'/editor/api/v1/lemma-article-version/{self.version_write.pk}/',
+            data={
+                'markup': False,
+            },
+            format='json',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.version_write.refresh_from_db()
+        self.assertEqual(self.version_write.markup, False)
+
+    def test_commenting_works_when_not_assigned(self):
+        # The markup has a changed comment,
+        new_markup = create_a_document(comment_text=self.comment_text + '!')
+        response = self.client.patch(
+            # but the user is only assigned to annotate.
+            f'/editor/api/v1/lemma-article-version/{self.version_annotate.pk}/',
+            data={
+                'markup': new_markup,
+            },
+            format='json',
+        )
+        # But the server does not care,
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.version_annotate.refresh_from_db()
+        # and updates the data anyway.
+        self.assertEqual(self.version_annotate.markup, new_markup)
+
+    def test_annotating_works_when_not_assigned(self):
+        # The markup got new annotations,
+        new_markup = create_a_document(
+            number_of_annotations=self.n_annotations + 1)
+        response = self.client.patch(
+            # but the user is only assigned to comment.
+            f'/editor/api/v1/lemma-article-version/{self.version_comment.pk}/',
+            data={
+                'markup': new_markup,
+            },
+            format='json',
+        )
+        # But the server does not care,
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.version_comment.refresh_from_db()
+        # and updates the data anyway.
+        self.assertEqual(self.version_comment.markup, new_markup)
+
+    def test_annotating_works_when_not_assigned_post(self):
+        # The markup got new annotations,
+        new_markup = create_a_document(
+            number_of_annotations=self.n_annotations + 1)
+        response = self.client.post(
+            # but the user is only assigned to comment.
+            f'/editor/api/v1/lemma-article-version/',
+            data={
+                'markup': new_markup,
+                'lemma_article': self.version_comment.lemma_article.pk,
+            },
+            format='json',
+        )
+        # But the server does not care,
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(
-            self.responseData.get('markup'),
-            self.version_2_markup,
+            new_markup,
+            # and updates the data anyway
+            LemmaArticleVersion.objects.get(pk=response.json()['id']).markup,
         )
 
-    def test_database_data(self):
-        self.target_version.refresh_from_db()
+    def test_commenting_works_when_not_assigned_post(self):
+        # The markup got new annotations,
+        new_markup = create_a_document(comment_text=self.comment_text + '!')
+        response = self.client.post(
+            # but the user is only assigned to comment.
+            f'/editor/api/v1/lemma-article-version/',
+            data={
+                'markup': new_markup,
+                'lemma_article': self.version_annotate.lemma_article.pk,
+            },
+            format='json',
+        )
+        # But the server does not care,
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(
-            self.target_version.markup,
-            self.version_2_markup,
-        )
-
-
-class SuccessfullGetPrototype(UserArticleVersionInteractionTestCaseProptotype):
-
-    def test_response_data(self):
-        expected_result: List['markup.EditorDocument']
-        if  (not self.user.is_superuser) and (self.arguments.assignment_type is None):
-            expected_result = []
-        else:
-            expected_result = [
-                self.databaseTestData.article_version_1.markup,
-                self.databaseTestData.article_version_2.markup,
-            ]
-            
-        self.assertListEqual(
-            [version['markup'] for version in self.responseData['results']],
-            expected_result,
-            "Result should be empty for not assigned 'Not-Super-Users' and contain both versions for all other"
-        )
-
-
-class SuccessfullRetrievePrototype(UserArticleVersionInteractionTestCaseProptotype):
-
-    def test_response_data(self):    
-        self.assertDictEqual(
-            self.responseData['markup'],  # Testing for markup, since it is a dict :-)
-            self.target_version.markup,
-            "This should return the same markup"
-        )
-
-
-# ----------------
-# Super User Tests
-# ----------------
-
-
-class SuperUserPostTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=IrsUser,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_201_CREATED,
-            method='POST',
-            shouldHaveBody=True
-        )
-
-
-class SuperUserGetTestCase(SuccessfullGetPrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=IrsUser,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_200_OK,
-            method='GET',
-            shouldHaveBody=True
-        )
-
-
-class SuperUserRetrieveTestCase(SuccessfullRetrievePrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=IrsUser,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_200_OK,
-            method='Retrieve',
-            shouldHaveBody=True
-        )
-
-class SuperUserPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=IrsUser,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_200_OK,
-            method='PATCH',
-            shouldHaveBody=True,
-            edit_type=EditTypes.WRITE,
-        )
-
-
-class SuperUserPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=IrsUser,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_200_OK,
-            method='PATCH',
-            shouldHaveBody=True,
-            edit_type=EditTypes.ANNOTATE,
-        )
-
-
-class SuperUserPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=IrsUser,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_200_OK,
-            method='PATCH',
-            shouldHaveBody=True,
-            edit_type=EditTypes.COMMENT,
-        )
-
-
-class SuperUserDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=IrsUser,
-            assignment_type=None,
-            method='DELETE',
-            expectedResponseCode=status.HTTP_204_NO_CONTENT,
-            shouldHaveBody=False,
-        )
-
-
-
-# --------------------------
-# Editor Tests: Not Assigned
-# --------------------------
-
-
-class EditorNotAssignedPostTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            method='POST',
-            shouldHaveBody=False
-        )
-
-
-class EditorNotAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_200_OK,
-            method='GET',
-            shouldHaveBody=True
-        )
-
-
-class EditorNotAssignedRetrieveTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,
-            method='Retrieve',
-            shouldHaveBody=False
-        )
-
-class EditorNotAssignedPatchWRITETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
-            method='PATCH',
-            shouldHaveBody=False,
-            edit_type=EditTypes.WRITE,
-        )
-
-
-class EditorNotAssignedPatchANNOTATETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
-            method='PATCH',
-            shouldHaveBody=False,
-            edit_type=EditTypes.ANNOTATE,
-        )
-
-
-class EditorNotAssignedPatchCOMMENTTypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
-            method='PATCH',
-            shouldHaveBody=False,
-            edit_type=EditTypes.COMMENT,
-        )
-
-
-class EditorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type=None,
-            method='DELETE',
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, editor can not see -> 404
-            shouldHaveBody=False,
-        )
-
-
-# --------------------------
-# Editor Tests: Assigned
-# --------------------------
-
-
-
-class EditorAssignedPostTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type='EDITOR',
-            expectedResponseCode=status.HTTP_201_CREATED,
-            method='POST',
-            shouldHaveBody=True
-        )
-
-
-class EditorAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type='EDITOR',
-            expectedResponseCode=status.HTTP_200_OK,
-            method='GET',
-            shouldHaveBody=True
-        )
-
-
-class EditorAssignedRetrieveTestCase(SuccessfullRetrievePrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type='EDITOR',
-            expectedResponseCode=status.HTTP_200_OK,
-            method='Retrieve',
-            shouldHaveBody=True
-        )
-
-
-class EditorAssignedPatchWRITETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type='EDITOR',
-            expectedResponseCode=status.HTTP_200_OK,
-            method='PATCH',
-            shouldHaveBody=True,
-            edit_type=EditTypes.WRITE,
-        )
-
-
-class EditorAssignedPatchANNOTATETypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type='EDITOR',
-            expectedResponseCode=status.HTTP_200_OK,
-            method='PATCH',
-            shouldHaveBody=True,
-            edit_type=EditTypes.ANNOTATE,
-        )
-
-
-class EditorAssignedPatchCOMMENTTypeTestCase(SuccessfullPostOrPatchPrototype, UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type='EDITOR',
-            expectedResponseCode=status.HTTP_200_OK,
-            method='PATCH',
-            shouldHaveBody=True,
-            edit_type=EditTypes.COMMENT,
-        )
-
-
-class EditorAssignedDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Editor,
-            assignment_type='EDITOR',
-            method='DELETE',
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-        )
-
-
-
-
-# --------------------------
-# Author Tests: Not Assigned
-# --------------------------
-
-
-class AuthorNotAssignedPostTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            method='POST',
-            shouldHaveBody=False
-        )
-
-
-class AuthorNotAssignedGetTestCase(SuccessfullGetPrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_200_OK,
-            method='GET',
-            shouldHaveBody=True
-        )
-
-
-class AuthorNotAssignedRetrieveTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,
-            method='Retrieve',
-            shouldHaveBody=False
-        )
-
-class AuthorNotAssignedPatchWRITETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
-            method='PATCH',
-            shouldHaveBody=False,
-            edit_type=EditTypes.WRITE,
-        )
-
-
-class AuthorNotAssignedPatchANNOTATETypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
-            method='PATCH',
-            shouldHaveBody=False,
-            edit_type=EditTypes.ANNOTATE,
-        )
-
-
-class AuthorNotAssignedPatchCOMMENTTypeTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=None,
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
-            method='PATCH',
-            shouldHaveBody=False,
-            edit_type=EditTypes.COMMENT,
-        )
-
-
-class AuthorNotAssignedDeleteTestCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=None,
-            method='DELETE',
-            expectedResponseCode=status.HTTP_404_NOT_FOUND,  # Patches an version, Author can not see -> 404
-            shouldHaveBody=False,
-        )
-
-
-# --------------------------
-# Author Tests: Assigned
-# --------------------------
-
-
-@dataclass(init=True, frozen=True, order=False)
-class AuthorPostsArticleVersionTestCaseArguments(UserArticleVersionInteractionTestCaseArguments):
-    is_first_post: bool = True
-    method: Literal['POST'] = 'POST'
-
-
-class AuthorPostTestPrototype(UserArticleVersionInteractionTestCaseProptotype, ABC):
-
-    @property
-    @abstractmethod
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        raise NotImplemented
-
-    def setUpDataBaseTestData(self) -> 'ArticleVersionDatabaseTestData':
-        test_data = super().setUpDataBaseTestData()
-
-        if self.arguments.is_first_post:
-            return test_data
-
-        version_1 = LemmaArticleVersion.objects.create(
-            lemma_article = test_data.article,
-            markup=example_markup.get_original_version()
-        )
-
-        return ArticleVersionDatabaseTestData(
-            issue=test_data.issue,
-            article=test_data.article,
-            article_version_1=version_1,
-        )
-
-
-
-# ********************************************************************
-# Authors with write assignemnt can post first and suceeding versions.
-# ********************************************************************
-        
-
-class AuthorAssignedWriteFirstPostTestCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.WRITE,
-            expectedResponseCode=status.HTTP_201_CREATED,
-            shouldHaveBody=True,
-            is_first_post=True,
-        )
-
-
-class AuthorAssignedWriteSecondPostTestCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
-    
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.WRITE,
-            expectedResponseCode=status.HTTP_201_CREATED,
-            shouldHaveBody=True,
-            is_first_post=False,
-        )
-
-
-# **************************************************************************
-# Authors with view assignment can neither post first nor suceeding versions.
-# ***************************************************************************
-
-
-class AuthorAssignedViewFirstPostCase(AuthorPostTestPrototype, APITestCase):
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.VIEW,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=True,
-        )
-
-
-class AuthorAssignedViewSecondPostCase(AuthorPostTestPrototype, APITestCase):
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.VIEW,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=False,
-        )
-
-
-
-# *********************************************************************
-# Authors with annotate or comment assignment not post first versions.
-# *********************************************************************
-
-
-class AuthorAssignedCommentFirstPostCase(AuthorPostTestPrototype, APITestCase):
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=True,
-        )
-
-
-class AuthorAssignedAnnotateFirstPostCase(AuthorPostTestPrototype, APITestCase):
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=True,
-        )
-
-
-
-# **********************************************************************************************
-# Authors with annotate or comment assignment can post succeeding versions in their own edit type:
-# 
-# A = Annotate, C = Comment, W = Write
-# 
-#       A   C   W
-# -------------------      
-#   A   +   X   X
-#   C   X   +   X
-# 
-# **********************************************************************************************
-
-# Let's do the the missing assignments before: 
-
-## Author Annotate 
-
-class AuthorAssignedAnnotateSecondPostCommentCase(AuthorPostTestPrototype, APITestCase):
-    """An author assigned to annotate posts changes in comments"""
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            edit_type=EditTypes.COMMENT,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=False,
-        )
-
-
-class AuthorAssignedAnnotateSecondPostWriteCase(AuthorPostTestPrototype, APITestCase):
-    """An author assigned to annotate posts changes in text"""
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            edit_type=EditTypes.WRITE,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=False,
-        )
-
-
-## Author Comment
-
-class AuthorAssignedCommentSecondPostAnnotateCase(AuthorPostTestPrototype, APITestCase):
-    """An author assigned to comment, posts changes in annotations"""
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            edit_type=EditTypes.ANNOTATE,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=False,
-        )
-
-
-class AuthorAssignedCommentSecondPostWriteCase(AuthorPostTestPrototype, APITestCase):
-    """An author, assigned to comment, posts changes in text"""
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            edit_type=EditTypes.WRITE,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            is_first_post=False,
-        )
-
-# Author Assigned Test Cases
-
-class AuthorAssignedAnnotateSecondPostAnnotateCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
-    " An author, assigned to annotate, changes annotations."
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            edit_type=EditTypes.ANNOTATE,
-            expectedResponseCode=status.HTTP_201_CREATED,
-            shouldHaveBody=True,
-            is_first_post=False,
-        )
-
-
-class AuthorAssignedCommentSecondPostCommentCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
-    " An author, assigned to comment, changes comments."
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            edit_type=EditTypes.COMMENT,
-            expectedResponseCode=status.HTTP_201_CREATED,
-            shouldHaveBody=True,
-            is_first_post=False,
-        )
-
-
-
-# ****************************************
-# Authors With Assignements Get & Retrieve
-# ****************************************
-
-
-class AuthorAssignedAnnotateGet(SuccessfullGetPrototype, APITestCase):
-    """An author assigned to annotate for an article can view all versions of that article"""
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            expectedResponseCode=status.HTTP_200_OK,
-            shouldHaveBody=True,
-            method='GET',
-        )
-
-
-class AuthorAssignedCommentGet(SuccessfullGetPrototype, APITestCase):
-    """An author assigned to comment for an article can view all versions of that article"""
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            expectedResponseCode=status.HTTP_200_OK,
-            shouldHaveBody=True,
-            method='GET',
-        )
-
-
-
-class AuthorAssignedAnnotateRetrieve(SuccessfullRetrievePrototype, APITestCase):
-    """An author assigned to annotate for an article can retrieve a version of that article"""
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            expectedResponseCode=status.HTTP_200_OK,
-            shouldHaveBody=True,
-            method='Retrieve',
-        )
-
-
-class AuthorAssignedCommentRetrieve(SuccessfullRetrievePrototype, APITestCase):
-    """An author assigned to comment for an article can retrieve a version of that article"""
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            expectedResponseCode=status.HTTP_200_OK,
-            shouldHaveBody=True,
-            method='Retrieve',
-        )
-
-
-
-# ****************************************
-# Authors With Assignements Patch
-# ****************************************
-
-
-class AuthorAssignedAnnotatePatchAnnotateCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
-    " An author, assigned to annotate, changes annotations."
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            edit_type=EditTypes.ANNOTATE,
-            expectedResponseCode=status.HTTP_200_OK,
-            shouldHaveBody=True,
-            is_first_post=False,
-            method='PATCH',
-            update=True,
-        )
-
-
-class AuthorAssignedCommentPATCHCommentCase(SuccessfullPostOrPatchPrototype, AuthorPostTestPrototype, APITestCase):
-    " An author, assigned to comment, changes comments."
-
-    @property
-    def arguments(self) -> AuthorPostsArticleVersionTestCaseArguments:
-        return AuthorPostsArticleVersionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            edit_type=EditTypes.COMMENT,
-            expectedResponseCode=status.HTTP_200_OK,
-            shouldHaveBody=True,
-            is_first_post=False,
-            method='PATCH',
-            update=True,
-        )
-
-
-# ********************************
-# Authors With Assignements Delete
-# ********************************
-
-
-class AuthorAssignedAnnotateDeleteCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    " An author, assigned to annotate, can not delete versions of */her/his articles"
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.ANNOTATE,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            method='DELETE',
-        )
-
-
-class AuthorAssignedCommentDeleteCase(UserArticleVersionInteractionTestCaseProptotype, APITestCase):
-    " An author, assigned to annotate, can not delete versions of */her/his articles"
-
-    @property
-    def arguments(self) -> UserArticleVersionInteractionTestCaseArguments:
-        return UserArticleVersionInteractionTestCaseArguments(
-            UserModel=Author,
-            assignment_type=EditTypes.COMMENT,
-            expectedResponseCode=status.HTTP_403_FORBIDDEN,
-            shouldHaveBody=False,
-            method='DELETE',
+            new_markup,
+            # and updates the data anyway
+            LemmaArticleVersion.objects.get(pk=response.json()['id']).markup,
         )

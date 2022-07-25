@@ -41,7 +41,8 @@ from rest_framework import status
 from oebl_editor.models import LemmaArticle, LemmaArticleVersion
 from oebl_irs_workflow.models import Author, EditTypes, Editor, IrsUser
 
-from oebl_editor.tests.utilitites.db_content import SetUpUserMixin, VersionGenerator, create_and_assign_article, create_article
+from oebl_irs_workflow.tests.utilities import SetUpUserMixin
+from oebl_editor.tests.utilitites.db_content import VersionGenerator, create_and_assign_article, create_article
 
 
 class SuperUserPostCase(SetUpUserMixin, APITestCase):

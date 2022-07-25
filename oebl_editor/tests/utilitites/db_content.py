@@ -1,10 +1,8 @@
 from datetime import datetime, timedelta
-from typing import Callable, List, Optional, Type, Union
+from typing import Callable, List, Optional, Union
 
-from django.test import Client
 from oebl_editor.models import LemmaArticleVersion, LemmaArticle
-from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, EditTypes, Editor, IrsUser, IssueLemma
-from django.contrib.auth.models import User
+from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, EditTypes, Editor, IssueLemma
 
 
 def create_article(article_kwargs: Optional[dict] = None, issue_kwargs: Optional[dict] = None) -> LemmaArticle:
@@ -46,37 +44,6 @@ class VersionGenerator:
             self.versions.append(version)
             self.dates.append(date)
         return self
-
-
-def create_user(
-        UserModel: Union[Type['Editor'], Type['IrsUser'], Type['Author']],
-    username: str,
-    password: str,
-) -> Union['Editor', 'IrsUser', 'Author']:
-    user: 'User'
-    if UserModel is IrsUser:
-        user = IrsUser.objects.create_superuser(username=username)
-    else:
-        user = UserModel.objects.create(username=username)
-
-    user.set_password(password)
-    user.save()
-    return user
-
-
-class SetUpUserMixin:
-
-    user: Union['Editor', 'IrsUser', 'Author']
-    client: 'Client'
-
-    def setUpUser(self):
-        UserModel = self.__annotations__['user']
-        username = UserModel.__class__.__name__
-        password = 'password'
-        self.user = create_user(
-            UserModel, username=username, password=password)
-        self.client.login(username=username, password=password)
-        return self.user
 
 
 def create_and_assign_article(user: Union['Editor', 'Author'], edit_type: EditTypes = EditTypes.WRITE):

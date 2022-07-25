@@ -44,7 +44,8 @@ from rest_framework import status
 from oebl_editor.models import LemmaArticle
 from oebl_irs_workflow.models import Editor, IrsUser, Author, IssueLemma
 
-from oebl_editor.tests.utilitites.db_content import SetUpUserMixin, create_and_assign_article, create_article
+from oebl_irs_workflow.tests.utilities import SetUpUserMixin
+from oebl_editor.tests.utilitites.db_content import create_and_assign_article, create_article
 
 
 class SuperUserTestCase(SetUpUserMixin, APITestCase):

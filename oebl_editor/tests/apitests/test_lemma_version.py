@@ -302,7 +302,7 @@ class EditorTestCase(SetUpUserMixin, APITestCase):
     def test_delete(self):
 
         self.assertEqual(
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_403_FORBIDDEN,
             self.client.delete(
                 f'/editor/api/v1/lemma-article-version/{self.not_assigned_version}/').status_code
         )
@@ -310,7 +310,7 @@ class EditorTestCase(SetUpUserMixin, APITestCase):
             pk=self.not_assigned_version.pk))
 
         self.assertEqual(
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_403_FORBIDDEN,
             self.client.delete(
                 f'/editor/api/v1/lemma-article-version/{self.first_assigned_version}/').status_code
         )
@@ -318,7 +318,7 @@ class EditorTestCase(SetUpUserMixin, APITestCase):
             pk=self.first_assigned_version.pk))
 
         self.assertEqual(
-            status.HTTP_404_NOT_FOUND,
+            status.HTTP_403_FORBIDDEN,
             self.client.delete(
                 f'/editor/api/v1/lemma-article-version/{self.latest_assigned_version}/').status_code
         )
@@ -450,7 +450,7 @@ class NoRestrictionsOnMarkupTestCase(SetUpUserMixin, APITestCase):
             format='json',
         )
         # But the server does not care,
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertDictEqual(
             new_markup,
             # and updates the data anyway
@@ -470,7 +470,7 @@ class NoRestrictionsOnMarkupTestCase(SetUpUserMixin, APITestCase):
             format='json',
         )
         # But the server does not care,
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertDictEqual(
             new_markup,
             # and updates the data anyway

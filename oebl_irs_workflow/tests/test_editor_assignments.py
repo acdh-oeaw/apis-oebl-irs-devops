@@ -30,23 +30,20 @@ Test rules regarding the assignment of editors to IssueLemmas -> `IssueLemma.edi
 ## GET (list) IssueLemmas With No Query
 
 - Super users get objects with editor assignments.
-- Editors get objects
-    - with editor assignments, if they are assigned.
-    - with no assignment, if they are not assigned -> that is with no editor key, which results in undefined. None would mean unassigned.
-- Authors get objects with no assignment -> that is with no editor key, which results in undefined. None would mean unassigned.
+- Editors get object without editor assignment.
+- Authors get object without editor assignment.
 
 ## GET (list) IssueLemmas With Editor Assignment Query (?editor=id)
 
 - Super users get filtered objects with editor assignments.
-- Editors get filtered objects if the query is for themselves – with editor assignment.
+- Editors get object without editor assignment.
 - Editors get a 403, if the query is for somone else.
 - Authors get a 403.
 
 ## GET (retrieve) Single IssueLemmas With Assignments
 
 - Super users the object with editor assignment.
-- Editors get filtered object if the query is for an issue lemma assigned to them - with editor assignment …
-- Editors get filtered object, if the query is for an issue lemma assigned to someone else or nobody, with no editor assignment -> that is with no editor key, which results in undefined. None would mean unassigned.
+- Editors get object without editor assignment.
 - Authors get object without editor assignment.
 """
 from typing import List
@@ -348,13 +345,11 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
 
 class ListWithNoQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
     """
-# GET (list) IssueLemmas With No Query
+## GET (list) IssueLemmas With No Query
 
 - Super users get objects with editor assignments.
-- Editors get objects
-    - with editor assignments, if they are assigned.
-    - with no assignment, if they are not assigned -> that is with no editor key, which results in undefined. None would mean unassigned.
-- Authors get objects with no assignment -> that is with no editor key, which results in undefined. None would mean unassigned.    
+- Editors get object without editor assignment.
+- Authors get object without editor assignment.
 """
 
     def test_superuser(self):
@@ -381,25 +376,8 @@ class ListWithNoQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestC
         results: List[dict] = data['results']
         self.assertEqual(2, results.__len__())
 
-        # We have one lemma assigned to another editor. Our's should not see that (but the rest of the data).
-        found_issue_lemma_with_no_editor = None
-        for result in results:
-            if 'editor' not in result:
-                found_issue_lemma_with_no_editor = result
-                break
-        self.assertIsNotNone(found_issue_lemma_with_no_editor)
-        self.assertEqual(self.not_assigned_issue_lemma.pk,
-                         found_issue_lemma_with_no_editor['id'])
-
-        # The other one is assigned to our editor. This can be seen
-        results.remove(found_issue_lemma_with_editor)
-        found_issue_lemma_with_editor = results[0]
-        self.assertEqual(self.assigned_issue_lemma.pk,
-                         found_issue_lemma_with_editor['id'])
-        self.assertEqual(self.assigned_issue_lemma.editor.pk,
-                         found_issue_lemma_with_editor['editor'])
-        self.assertEqual(self.editor.editor.pk,
-                         found_issue_lemma_with_editor['editor'])
+        # None of them should show assigned editors
+        self.assertTrue(all('editor' not in result for result in results))
 
     def test_author(self):
         create_and_login_user(Author, self.client)
@@ -407,15 +385,12 @@ class ListWithNoQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestC
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         results: List[dict] = data['results']
+        
         self.assertEqual(2, results.__len__())
+        
         # None of them should show assigned editors
-        self.assertTrue(
-            all(
-                (
-                    'editor' not in result for result in results
-                )
-            )
-        )
+        self.assertTrue(all('editor' not in result for result in results))
+
 
 
 class ListWithQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
@@ -423,7 +398,7 @@ class ListWithQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestCas
 ## GET (list) IssueLemmas With Editor Assignment Query (?editor=id)
 
 - Super users get filtered objects with editor assignments.
-- Editors get filtered objects if the query is for themselves – with editor assignment.
+- Editors get object without editor assignment.
 - Editors get a 403, if the query is for somone else.
 - Authors get a 403.
 """
@@ -448,8 +423,9 @@ class ListWithQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestCas
         data = response.json()
         results: List[dict] = data['results']
         self.assertEqual(1, results.__len__())
-        self.assertEqual(results[0]['id'], self.assigned_issue_lemma.pk)
-        self.assertEqual(results[0]['editor'], self.editor.pk)
+        result = results[0]
+        self.assertEqual(result['id'], self.assigned_issue_lemma.pk)
+        self.assertNotIn('editor', result)
 
         # - Editor get a 403, if the query is for somone else.
         other_editor_id = Editor.objects.filter(~Q(pk=self.editor)).first().pk
@@ -469,8 +445,7 @@ class RetrieveTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
 ## GET (retrieve) Single IssueLemmas With Assignments
 
 - Super users the object with editor assignment.
-- Editors get filtered object if the query is for an issue lemma assigned to them - with editor assignment …
-- Editors get filtered object, if the query is for an issue lemma assigned to someone else or nobody, with no editor assignment -> that is with no editor key, which results in undefined. None would mean unassigned.
+- Editors get object without editor assignment.
 - Authors get object without editor assignment.
 """
 
@@ -498,7 +473,8 @@ class RetrieveTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data['id'], self.assigned_issue_lemma.pk)
-        self.assertEqual(data['editor'], self.editor.pk)
+        self.assertNotIn('editor', data)
+
 
         # - Editor gets data with no other editor info
         response = self.client.get(

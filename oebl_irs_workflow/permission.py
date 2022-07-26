@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from rest_framework import permissions
 
 if TYPE_CHECKING:
@@ -35,9 +35,15 @@ class IssueLemmaEditorAssignmentPermissions(permissions.BasePermission):
         if user.is_superuser:
             return True
 
-        # Only super users can delete an editor assignment
+        # Only super users can delete an editor assignment.
         if request.method == 'DELETE' and obj.editor is not None:
             return False
+
+        # Only super users can change an editor assignment.
+        if request.method in ('PATCH', 'PUT', ):
+            old_editor_id: Optional[int] = getattr(obj.editor, 'pk', None)
+            new_editor_id: Optional[int] = request.data.get('editor', None)
+            return old_editor_id == new_editor_id
         
         return True
 

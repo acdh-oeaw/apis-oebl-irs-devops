@@ -157,13 +157,6 @@ class IssueLemma(models.Model):
                     lemma["collection"] = [x.pk for x in lemma["collection"]]
             else:
                 lemma = None
-            if self._loaded_values["author_id"] is not None:
-                author = model_to_dict(
-                    Author.objects.get(pk=self._loaded_values["author_id"]),
-                    fields=["id", "username", "first_name", "last_name", "email"],
-                )
-            else:
-                author = None
             if self._loaded_values["editor_id"] is not None:
                 editor = model_to_dict(
                     Editor.objects.get(pk=self._loaded_values["editor_id"]),
@@ -176,7 +169,6 @@ class IssueLemma(models.Model):
                 "issue": issue,
                 "status": status,
                 "lemma": lemma,
-                "author": author,
                 "editor": editor,
             }
             if self.serialization is not None:

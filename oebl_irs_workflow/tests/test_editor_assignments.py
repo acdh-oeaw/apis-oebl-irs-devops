@@ -169,10 +169,9 @@ class UnassignTestCase(LogOutMixin, AssignedIssueLemmaMixin, APITestCase):
     def test_superuser_patch(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.patch(
-            '/workflow/api/v1/issue-lemma/',
+            f'/workflow/api/v1/issue-lemma/{self.assigned_issue_lemma.pk}/',
             data={
                 'editor': None,
-                'id': self.assigned_issue_lemma.pk
             },
             format='json'
         )
@@ -184,11 +183,8 @@ class UnassignTestCase(LogOutMixin, AssignedIssueLemmaMixin, APITestCase):
     def test_superuser_put(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.put(
-            '/workflow/api/v1/issue-lemma/',
-            data={
-                **create_valid_issue_lemma_json_for_editor(editor_id=None),
-                'id': self.assigned_issue_lemma.pk,
-            },
+            f'/workflow/api/v1/issue-lemma/{self.assigned_issue_lemma.pk}/',
+            data=create_valid_issue_lemma_json_for_editor(editor_id=None),
             format='json'
         )
         self.assertEqual(response.status_code,
@@ -199,10 +195,9 @@ class UnassignTestCase(LogOutMixin, AssignedIssueLemmaMixin, APITestCase):
     def test_editor_patch(self):
         create_and_login_user(Editor, self.client)
         response = self.client.patch(
-            '/workflow/api/v1/issue-lemma/',
+            f'/workflow/api/v1/issue-lemma/{self.assigned_issue_lemma.pk}/',
             data={
                 'editor': None,
-                'id': self.assigned_issue_lemma.pk
             },
             format='json'
         )
@@ -214,11 +209,8 @@ class UnassignTestCase(LogOutMixin, AssignedIssueLemmaMixin, APITestCase):
     def test_editor_put(self):
         create_and_login_user(Editor, self.client)
         response = self.client.put(
-            '/workflow/api/v1/issue-lemma/',
-            data={
-                **create_valid_issue_lemma_json_for_editor(editor_id=None),
-                'id': self.assigned_issue_lemma.pk,
-            },
+            f'/workflow/api/v1/issue-lemma/{self.assigned_issue_lemma.pk}/',
+            data=create_valid_issue_lemma_json_for_editor(editor_id=None),
             format='json'
         )
 
@@ -230,10 +222,9 @@ class UnassignTestCase(LogOutMixin, AssignedIssueLemmaMixin, APITestCase):
     def test_author_patch(self):
         create_and_login_user(Author, self.client)
         response = self.client.patch(
-            '/workflow/api/v1/issue-lemma/',
+            f'/workflow/api/v1/issue-lemma/{self.assigned_issue_lemma.pk}/',
             data={
                 'editor': None,
-                'id': self.assigned_issue_lemma.pk
             },
             format='json'
         )
@@ -245,7 +236,7 @@ class UnassignTestCase(LogOutMixin, AssignedIssueLemmaMixin, APITestCase):
     def test_author_put(self):
         create_and_login_user(Author, self.client)
         response = self.client.put(
-            '/workflow/api/v1/issue-lemma/',
+            f'/workflow/api/v1/issue-lemma/{self.assigned_issue_lemma.pk}/',
             data={
                 **create_valid_issue_lemma_json_for_editor(editor_id=None),
                 'id': self.assigned_issue_lemma.pk,
@@ -272,10 +263,9 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
         create_and_login_user(IrsUser, self.client)
         editor = Editor.objects.create()
         response = self.client.patch(
-            '/workflow/api/v1/issue-lemma/',
+            f'/workflow/api/v1/issue-lemma/{self.not_assigned_issue_lemma.pk}/',
             data={
                 'editor': editor.pk,
-                'id': self.not_assigned_issue_lemma.pk
             },
             format='json'
         )
@@ -288,11 +278,8 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
         create_and_login_user(IrsUser, self.client)
         editor = Editor.objects.create()
         response = self.client.put(
-            '/workflow/api/v1/issue-lemma/',
-            data={
-                **create_valid_issue_lemma_json_for_editor(editor_id=editor.pk),
-                'id': self.not_assigned_issue_lemma.pk,
-            },
+            f'/workflow/api/v1/issue-lemma/{self.not_assigned_issue_lemma.pk}/',
+            data=create_valid_issue_lemma_json_for_editor(editor_id=editor.pk),
             format='json'
         )
         self.assertEqual(response.status_code,
@@ -303,10 +290,9 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
     def test_editor_patch(self):
         create_and_login_user(Editor, self.client)
         response = self.client.patch(
-            '/workflow/api/v1/issue-lemma/',
+            f'/workflow/api/v1/issue-lemma/{self.not_assigned_issue_lemma.pk}/',
             data={
                 'editor': Editor.objects.create().pk,
-                'id': self.not_assigned_issue_lemma.pk
             },
             format='json'
         )
@@ -318,13 +304,10 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
     def test_editor_put(self):
         create_and_login_user(Editor, self.client)
         response = self.client.put(
-            '/workflow/api/v1/issue-lemma/',
-            data={
-                **create_valid_issue_lemma_json_for_editor(
-                    editor_id=Editor.objects.create().pk
-                ),
-                'id': self.not_assigned_issue_lemma.pk,
-            },
+            f'/workflow/api/v1/issue-lemma/{self.not_assigned_issue_lemma.pk}/',
+            data = create_valid_issue_lemma_json_for_editor(
+                editor_id=Editor.objects.create().pk
+            ),
             format='json'
         )
 
@@ -336,10 +319,9 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
     def test_author_patch(self):
         create_and_login_user(Author, self.client)
         response = self.client.patch(
-            '/workflow/api/v1/issue-lemma/',
+            f'/workflow/api/v1/issue-lemma/{self.not_assigned_issue_lemma.pk}/',
             data={
                 'editor': Editor.objects.create().pk,
-                'id': self.not_assigned_issue_lemma.pk
             },
             format='json'
         )
@@ -351,13 +333,10 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
     def test_author_put(self):
         create_and_login_user(Author, self.client)
         response = self.client.put(
-            '/workflow/api/v1/issue-lemma/',
-            data={
-                **create_valid_issue_lemma_json_for_editor(
+            f'/workflow/api/v1/issue-lemma/{self.not_assigned_issue_lemma.pk}/',
+            data=create_valid_issue_lemma_json_for_editor(
                     editor_id=Editor.objects.create().pk
-                ),
-                'id': self.not_assigned_issue_lemma.pk,
-            },
+            ),
             format='json'
         )
 

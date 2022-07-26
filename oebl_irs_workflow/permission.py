@@ -24,7 +24,7 @@ class IssueLemmaEditorAssignmentPermissions(permissions.BasePermission):
         if request.method == 'POST':
             return 'editor' not in request.data
 
-        return False
+        return True
 
 
     def has_object_permission(self, request: 'Request', view: 'IssueLemmaViewset', obj: 'IssueLemma'):

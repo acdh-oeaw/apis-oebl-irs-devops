@@ -1,3 +1,4 @@
+from oebl_irs_workflow.permission import IssueLemmaEditorAssignmentPermissions
 from rest_framework.response import Response
 from rest_framework import filters, viewsets, renderers
 from rest_framework.views import APIView
@@ -71,7 +72,7 @@ class IssueLemmaViewset(viewsets.ModelViewSet):
     serializer_class = IssueLemmaSerializer
     filter_fields = ["lemma", "issue", "editor", ]
     http_method_names = ["get", "post", "head", "options", "delete", "update", "patch"]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IssueLemmaEditorAssignmentPermissions]
 
 
 class LemmaViewset(viewsets.ReadOnlyModelViewSet):

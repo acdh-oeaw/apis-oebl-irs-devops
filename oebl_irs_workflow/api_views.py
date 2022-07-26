@@ -71,7 +71,7 @@ class IssueLemmaViewset(viewsets.ModelViewSet):
     queryset = IssueLemma.objects.all()
     serializer_class = IssueLemmaSerializer
     filter_fields = ["lemma", "issue", "editor", ]
-    http_method_names = ["get", "post", "head", "options", "delete", "update", "patch"]
+    http_method_names = ["get", "post", "head", "options", "delete", "update", "patch", "put", ]
     permission_classes = [IsAuthenticated, IssueLemmaEditorAssignmentPermissions]
 
 

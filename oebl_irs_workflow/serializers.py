@@ -126,6 +126,13 @@ class IssueLemmaSerializerOpenApi(serializers.ModelSerializer):
 
 
 class IssueLemmaSerializer(serializers.ModelSerializer):
+    """
+    TODO: This class really needs some refactorization. 
+        - It is unclear, what the "serialization" field is for,
+        - why extened schema field?
+        - update and create are very simular, spaghetti, and not very pythonic.
+    I do not do it now, because, we have no tests and I don't have no time.
+    """
     notes = serializers.SerializerMethodField(method_name="get_notes")
     serialization = serializers.SerializerMethodField(method_name="get_serialization")
     lemma = LemmaSerializer()

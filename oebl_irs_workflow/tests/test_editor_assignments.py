@@ -343,7 +343,7 @@ class AssignTestCase(LogOutMixin, NotAssignedIssueLemmaMixin, APITestCase):
         self.assertIsNone(self.not_assigned_issue_lemma.editor)
 
 
-class ListWithNoQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
+class ListWithNoQueryTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
     """
 ## GET (list) IssueLemmas With No Query
 
@@ -393,7 +393,7 @@ class ListWithNoQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestC
 
 
 
-class ListWithQueryTestAssignment(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
+class ListWithAssignmentQueryTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
     """
 ## GET (list) IssueLemmas With Editor Assignment Query (?editor=id)
 

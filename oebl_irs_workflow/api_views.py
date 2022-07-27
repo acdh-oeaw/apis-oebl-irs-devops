@@ -1,3 +1,4 @@
+from typing import Type, Union
 from oebl_irs_workflow.permission import IssueLemmaEditorAssignmentPermissions
 from rest_framework.response import Response
 from rest_framework import filters, viewsets, renderers
@@ -20,6 +21,7 @@ from .models import (
 )
 from .serializer_rl2wf import ResearchLemma2WorkflowLemmaSerializer
 from .serializers import (
+    EditorlessIssueLemmaSerializer,
     UserDetailSerializer,
     AuthorSerializer,
     EditorSerializer,
@@ -69,10 +71,18 @@ class IssueViewset(viewsets.ModelViewSet):
 class IssueLemmaViewset(viewsets.ModelViewSet):
 
     queryset = IssueLemma.objects.all()
-    serializer_class = IssueLemmaSerializer
     filter_fields = ["lemma", "issue", "editor", ]
     http_method_names = ["get", "post", "head", "options", "delete", "update", "patch", "put", ]
     permission_classes = [IsAuthenticated, IssueLemmaEditorAssignmentPermissions]
+
+    def get_serializer_class(self) -> Union[Type[IssueLemmaSerializer], Type[EditorlessIssueLemmaSerializer]]:
+        """
+        Super users can see, which editor is assigned to an IssueLemma, authors and editors can not.
+        """
+        if self.request.user.is_superuser:
+            return IssueLemmaSerializer
+        else:
+            return EditorlessIssueLemmaSerializer
 
 
 class LemmaViewset(viewsets.ReadOnlyModelViewSet):

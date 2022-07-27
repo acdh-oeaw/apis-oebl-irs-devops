@@ -207,3 +207,17 @@ class IssueLemmaSerializer(serializers.ModelSerializer):
         model = IssueLemma
         fields = "__all__"
         read_only_fields = ["serialization"]
+
+
+class EditorlessIssueLemmaSerializer(IssueLemmaSerializer):
+    """
+    A Serialization Of IssueLemma Without The Editor Field
+
+    Our requirement is, that authors and editors can not see, who is assigned for IssueLemmas.
+    """
+
+    class Meta:
+        model = IssueLemma
+        exclude = ['editor', ]
+        read_only_fields = ["serialization"]
+    

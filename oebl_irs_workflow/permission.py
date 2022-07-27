@@ -24,6 +24,14 @@ class IssueLemmaEditorAssignmentPermissions(permissions.BasePermission):
         if request.method == 'POST':
             return 'editor' not in request.data
 
+        # Only super users can query, editors not themselves.
+        if request.method == 'GET' and 'editor' in request.GET:
+            editor_param: str = request.GET['editor']
+            # No validation here
+            if not editor_param.isdigit():
+                return False
+            return request.user.pk == int(editor_param)
+
         return True
 
 

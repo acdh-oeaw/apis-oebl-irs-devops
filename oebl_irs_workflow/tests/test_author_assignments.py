@@ -260,18 +260,18 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_not_assigned_put(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
             data={
-                'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
+                'issue_lemma': self.editor_uncontrolled_author_assignment.issue_lemma.pk,
                 'author': self.some_other_author.pk,
-                'edit_type': self.editor_controlled_author_assignment.edit_type,
+                'edit_type': self.editor_uncontrolled_author_assignment.edit_type,
             }
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
                          'Editors can not change assignments for issues, they are not assigned to.')
-        self.editor_controlled_author_assignment.refresh_from_db()
-        self.assertNotEqual(self.some_other_author, self.editor_controlled_author_assignment.author,
+        self.editor_uncontrolled_author_assignment.refresh_from_db()
+        self.assertNotEqual(self.some_other_author, self.editor_uncontrolled_author_assignment.author,
                             'After failing PUT, the data should not be changed')
 
     def test_author_patch(self):
@@ -393,18 +393,18 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_editor_not_assigned_put(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
             data={
-                'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
+                'issue_lemma': self.editor_uncontrolled_author_assignment.issue_lemma.pk,
                 'author': self.author.pk,
                 'edit_type': self.NEW_EDIT_TYPE,
             }
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
                          'Editors can not change assignments for issue, they are not responsible for.')
-        self.editor_controlled_author_assignment.refresh_from_db()
-        self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
+        self.editor_uncontrolled_author_assignment.refresh_from_db()
+        self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_uncontrolled_author_assignment.edit_type,
                             'After failing to submit a change, the database should not have new data.')
 
     def test_author_patch(self):

@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from .models import (
     Author,
+    AuthorIssueLemmaAssignment,
     Editor,
     Issue,
     IssueLemma,
@@ -220,4 +221,10 @@ class EditorlessIssueLemmaSerializer(IssueLemmaSerializer):
         model = IssueLemma
         exclude = ['editor', ]
         read_only_fields = ["serialization"]
-    
+
+
+class AuthorIssueLemmaAssignmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AuthorIssueLemmaAssignment
+        fields = ['issue_lemma', 'author', 'edit_type', ]

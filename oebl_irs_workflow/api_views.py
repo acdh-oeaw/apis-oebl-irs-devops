@@ -18,9 +18,11 @@ from .models import (
     Lemma,
     LemmaLabel,
     Editor,
+    AuthorIssueLemmaAssignment,
 )
 from .serializer_rl2wf import ResearchLemma2WorkflowLemmaSerializer
 from .serializers import (
+    AuthorIssueLemmaAssignmentSerializer,
     EditorlessIssueLemmaSerializer,
     UserDetailSerializer,
     AuthorSerializer,
@@ -137,3 +139,11 @@ class ResearchLemma2WorkflowLemma(APIView):
             res = serializer.create(serializer.data, request.user)
             return Response(res, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AuthorIssueLemmaAssignmentViewSet(viewsets.ModelViewSet):
+    
+    serializer_class = AuthorIssueLemmaAssignmentSerializer
+    permission_classes = [IsAuthenticated, ]
+    queryset = AuthorIssueLemmaAssignment.objects.all()
+    filter_fields = ['issue_lemma', 'author', 'edit_type', ]

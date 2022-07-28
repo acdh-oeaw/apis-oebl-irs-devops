@@ -31,7 +31,7 @@ class PostTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
     def test_superuser(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.post(
-            '/workflow/api/v1/author-issue-assignment',
+            '/workflow/api/v1/author-issue-assignment/',
             format='json',
             data={
                 'issue_lemma': self.assigned_issue_lemma.pk,
@@ -40,7 +40,7 @@ class PostTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
             },
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED,
-                         'Super uses should have no restrictions')
+                         'Super users should have no restrictions')
         self.assertTrue(
             AuthorIssueLemmaAssignment.objects.filter(
                 issue_lemma=self.assigned_issue_lemma,
@@ -53,7 +53,7 @@ class PostTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
     def test_editor_assigned(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.post(
-            '/workflow/api/v1/author-issue-assignment',
+            '/workflow/api/v1/author-issue-assignment/',
             format='json',
             data={
                 'issue_lemma': self.assigned_issue_lemma.pk,
@@ -75,7 +75,7 @@ class PostTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
     def test_editor_not_assigned(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.post(
-            '/workflow/api/v1/author-issue-assignment',
+            '/workflow/api/v1/author-issue-assignment/',
             format='json',
             data={
                 'issue_lemma': self.not_assigned_issue_lemma.pk,
@@ -97,7 +97,7 @@ class PostTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
     def test_author(self):
         create_and_login_user(Author, self.client)
         response = self.client.post(
-            '/workflow/api/v1/author-issue-assignment',
+            '/workflow/api/v1/author-issue-assignment/',
             format='json',
             data={
                 'issue_lemma': self.assigned_issue_lemma.pk,
@@ -122,10 +122,10 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_superuser(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/')
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/')
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT,
                          'Super users can delete everything.')
         self.assertFalse(AuthorIssueLemmaAssignment.objects.exists(
@@ -134,7 +134,7 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_assigned(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/')
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT,
                          'Editors can delete assignments for issues, they are asssigned to.')
         self.assertFalse(AuthorIssueLemmaAssignment.objects.filter(
@@ -145,7 +145,7 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_not_assigned(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/')
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
                          'Editors can not delete assignments for issues, they are not asssigned to.')
         self.assertTrue(AuthorIssueLemmaAssignment.objects.filter(
@@ -156,11 +156,11 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_author(self):
         create_and_login_user(Author, self.client)
         response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/')
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
                          'Authors can not delete assignments.')
         response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/')
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
                          'Authors can not delete assignments.')
         self.assertEqual(
@@ -181,7 +181,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_superuser_patch(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'author': self.some_other_author.pk,
@@ -196,7 +196,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_superuser_put(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
@@ -213,7 +213,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_assigned_patch(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'author': self.some_other_author.pk,
@@ -228,7 +228,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_assigned_put(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
@@ -245,7 +245,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_not_assigned_patch(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
             data={
                 'author': self.some_other_author.pk,
@@ -260,7 +260,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_not_assigned_put(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
@@ -277,7 +277,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_author_patch(self):
         create_and_login_user(Author, self.client)
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
             data={
                 'author': self.some_other_author.pk,
@@ -292,7 +292,7 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_author_put(self):
         create_and_login_user(Author, self.client)
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
@@ -314,7 +314,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_superuser_patch(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'edit_type': self.NEW_EDIT_TYPE,
@@ -329,7 +329,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_superuser_put(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
@@ -346,7 +346,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_editor_assigned_patch(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'edit_type': self.NEW_EDIT_TYPE,
@@ -361,7 +361,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_editor_assigned_put(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
@@ -378,7 +378,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_editor_not_assigned_patch(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
             data={
                 'edit_type': self.NEW_EDIT_TYPE,
@@ -393,7 +393,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_editor_not_assigned_put(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,
@@ -410,7 +410,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_author_patch(self):
         create_and_login_user(Author, self.client)
         response = self.client.patch(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
             data={
                 'edit_type': self.NEW_EDIT_TYPE,
@@ -425,7 +425,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
     def test_author_put(self):
         create_and_login_user(Author, self.client)
         response = self.client.put(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/',
+            f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
             data={
                 'issue_lemma': self.editor_controlled_author_assignment.issue_lemma.pk,

@@ -495,7 +495,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_superuser_issue_query(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.get(
-            f'/workflow/api/v1/author-issue-assignment/?issue-lemma={self.assigned_issue_lemma.pk}')
+            f'/workflow/api/v1/author-issue-assignment/?issue_lemma={self.assigned_issue_lemma.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.json()['results']
         self.assertEqual(
@@ -527,7 +527,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_assigned_issue_query(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.get(
-            f'/workflow/api/v1/author-issue-assignment/?issue-lemma={self.assigned_issue_lemma.pk}')
+            f'/workflow/api/v1/author-issue-assignment/?issue_lemma={self.assigned_issue_lemma.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.json()['results']
         self.assertEqual(1, len(
@@ -537,7 +537,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_editor_not_assigned_issue_query(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.get(
-            f'/workflow/api/v1/author-issue-assignment/?issue-lemma={self.not_assigned_issue_lemma.pk}')
+            f'/workflow/api/v1/author-issue-assignment/?issue_lemma={self.not_assigned_issue_lemma.pk}')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_editor_author_query(self):
@@ -565,7 +565,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
     def test_author_issue_query(self):
         self.client.login(username=self.author.username, password='password')
         response = self.client.get(
-            f'/workflow/api/v1/author-issue-assignment/?issue-lemma={self.not_assigned_issue_lemma.pk}')
+            f'/workflow/api/v1/author-issue-assignment/?issue_lemma={self.not_assigned_issue_lemma.pk}')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.json()['results']
         self.assertEqual(1, len(
@@ -587,7 +587,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.client.login(username=self.author.username, password='password')
         other_author = Author.objects.filter(~Q(pk=self.author.pk)).first()
         response = self.client.get(
-            f'/workflow/api/v1/author-issue-assignment/?issue-lemma={other_author.pk}')
+            f'/workflow/api/v1/author-issue-assignment/?issue_lemma={other_author.pk}')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_author_edit_type_query(self):

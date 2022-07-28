@@ -4,7 +4,7 @@ from typing import Optional, Type, Union
 from rest_framework.test import APITestCase, APIClient
 
 
-from oebl_irs_workflow.models import Author, Editor, IrsUser, IssueLemma, Lemma, User
+from oebl_irs_workflow.models import Author, AuthorIssueLemmaAssignment, EditTypes, Editor, IrsUser, IssueLemma, Lemma, User
 from oebl_irs_workflow.serializers import LemmaSerializer
 
 
@@ -113,3 +113,28 @@ class LogOutMixin:
         self.client.logout()
 
 
+
+class FullAssignmentMixin(MixedIssueLemmasMixin):
+
+    author: 'Author'
+    editor_controlled_author_assignment: 'AuthorIssueLemmaAssignment' 
+    """This assignment belongs to on issue assigned to the editor"""
+    editor_uncontrolled_author_assignment: 'AuthorIssueLemmaAssignment' 
+    """This assignment is assigned to on issue, not assigned to the editor"""
+    
+    EDIT_TYPE: EditTypes = EditTypes.WRITE
+
+    def setUp(self):
+        super().setUp()
+        self.author = create_user(Author, 'Henrietta Bagel', 'password')
+        self.editor_controlled_author_assignment = AuthorIssueLemmaAssignment.objects.create(
+            issue_lemma = self.assigned_issue_lemma,  # Assigned to the editor
+            author = self.author,
+            edit_type = self.EDIT_TYPE,
+        )
+
+        self.editor_uncontrolled_author_assignment = AuthorIssueLemmaAssignment.objects.create(
+            issue_lemma = self.not_assigned_issue_lemma, # Not assigned to the editor
+            author = self.author,
+            edit_type = self.EDIT_TYPE,
+        )

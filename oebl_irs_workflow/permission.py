@@ -55,4 +55,7 @@ class IssueLemmaEditorAssignmentPermissions(permissions.BasePermission):
         
         return True
 
+
+class AuthorIssueLemmaAssignmentPermissions(permissions.BasePermission):
+
     

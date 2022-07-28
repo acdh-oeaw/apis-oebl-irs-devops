@@ -1,5 +1,5 @@
 from typing import Type, Union
-from oebl_irs_workflow.permission import IssueLemmaEditorAssignmentPermissions
+from oebl_irs_workflow.permission import AuthorIssueLemmaAssignmentPermissions, IssueLemmaEditorAssignmentPermissions
 from rest_framework.response import Response
 from rest_framework import filters, viewsets, renderers
 from rest_framework.views import APIView
@@ -144,6 +144,6 @@ class ResearchLemma2WorkflowLemma(APIView):
 class AuthorIssueLemmaAssignmentViewSet(viewsets.ModelViewSet):
     
     serializer_class = AuthorIssueLemmaAssignmentSerializer
-    permission_classes = [IsAuthenticated, ]
+    permission_classes = [IsAuthenticated, AuthorIssueLemmaAssignmentPermissions, ]
     queryset = AuthorIssueLemmaAssignment.objects.all()
     filter_fields = ['issue_lemma', 'author', 'edit_type', ]

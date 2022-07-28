@@ -15,6 +15,3 @@ class LemmaArticleVersionSerializer(serializers.ModelSerializer):
         model = LemmaArticleVersion
         fields = ('lemma_article', 'markup', 'date_created', 'date_modified', 'id', )
         read_only_fields = ('date_created', 'date_modified', 'id', )
-        
-
-userArticleEdityTypeMappingFields = ('lemma_article', 'user', 'edit_type', )

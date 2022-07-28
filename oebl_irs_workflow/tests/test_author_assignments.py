@@ -500,7 +500,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         results = response.json()['results']
         self.assertEqual(
             1, len(results), 'Superuser should see all assignments of issue lemma')
-        self.assertEqual(self.assigned_issue_lemma.pk, results[0]['id'])
+        self.assertEqual(self.assigned_issue_lemma.pk, results[0]['issue_lemma'])
 
     def test_superuser_author_query(self):
         create_and_login_user(IrsUser, self.client)
@@ -532,7 +532,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         results = response.json()['results']
         self.assertEqual(1, len(
             results), 'Editor should see all assignments for issue lemma assigned to editor')
-        self.assertEqual(self.assigned_issue_lemma.pk, results[0]['id'])
+        self.assertEqual(self.assigned_issue_lemma.pk, results[0]['issue_lemma'])
 
     def test_editor_not_assigned_issue_query(self):
         self.client.login(username=self.editor.username, password='password')
@@ -570,7 +570,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         results = response.json()['results']
         self.assertEqual(1, len(
             results), 'Author should see all assignments for issue lemma assigned to author (There are 2, one for another author)')
-        self.assertEqual(self.not_assigned_issue_lemma.pk, results[0]['id'])
+        self.assertEqual(self.not_assigned_issue_lemma.pk, results[0]['issue_lemma'])
 
     def test_author_self_query(self):
         self.client.login(username=self.author.username, password='password')
@@ -620,14 +620,14 @@ class RetrieveTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         response = self.client.get(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.assigned_issue_lemma.pk, response.json()['id'])
+        self.assertEqual(self.assigned_issue_lemma.pk, response.json()['issue_lemma'])
 
     def test_editor_assigned(self):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.get(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.assigned_issue_lemma.pk, response.json()['id'])
+        self.assertEqual(self.assigned_issue_lemma.pk, response.json()['issue_lemma'])
 
     def test_editor_not_assigned(self):
         self.client.login(username=self.editor.username, password='password')
@@ -640,7 +640,7 @@ class RetrieveTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         response = self.client.get(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.assigned_issue_lemma.pk, response.json()['id'])
+        self.assertEqual(self.assigned_issue_lemma.pk, response.json()['issue_lemma'])
 
     def test_author_not_assigned(self):
         self.client.login(username=self.author.username, password='password')

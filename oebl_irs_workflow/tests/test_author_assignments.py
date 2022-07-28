@@ -129,7 +129,7 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT,
                          'Super users can delete everything.')
         self.assertFalse(AuthorIssueLemmaAssignment.objects.exists(
-        ), 'After deleting, the assignement should not be in the database.')
+        ), 'After deleting, the assignment should not be in the database.')
 
     def test_editor_assigned(self):
         self.client.login(username=self.editor.username, password='password')
@@ -139,7 +139,7 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
                          'Editors can delete assignments for issues, they are asssigned to.')
         self.assertFalse(AuthorIssueLemmaAssignment.objects.filter(
             pk=self.editor_controlled_author_assignment.pk).exists(),
-            'After deleting, the assignement should not be in the database.'
+            'After deleting, the assignment should not be in the database.'
         )
 
     def test_editor_not_assigned(self):
@@ -158,11 +158,11 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         response = self.client.delete(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Authors can not delete assignements.')
+                         'Authors can not delete assignments.')
         response = self.client.delete(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Authors can not delete assignements.')
+                         'Authors can not delete assignments.')
         self.assertEqual(
             2,
             AuthorIssueLemmaAssignment.objects.count(),
@@ -353,7 +353,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
             }
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK,
-                         'Editors can change assignements for issue, they are responsible for.')
+                         'Editors can change assignments for issue, they are responsible for.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
                          'After submitting a change, the database should have new data.')
@@ -370,7 +370,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
             }
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK,
-                         'Editors can change assignements for issue, they are responsible for.')
+                         'Editors can change assignments for issue, they are responsible for.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
                          'After submitting a change, the database should have new data.')
@@ -385,7 +385,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
             }
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Editors can not change assignements for issue, they are not responsible for.')
+                         'Editors can not change assignments for issue, they are not responsible for.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
                             'After failing to submit a change, the database should not have new data.')
@@ -402,7 +402,7 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
             }
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Editors can not change assignements for issue, they are not responsible for.')
+                         'Editors can not change assignments for issue, they are not responsible for.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
                             'After failing to submit a change, the database should not have new data.')
@@ -465,7 +465,7 @@ class ListWithNoQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.json()['results']
         self.assertEqual(1, len(
-            results), 'Editor should only see assignements for issues, assigned to */her/him')
+            results), 'Editor should only see assignments for issues, assigned to */her/him')
         assignment = results[0]
         self.assertEqual(
             assignment['id'], self.editor_controlled_author_assignment.pk)
@@ -476,7 +476,7 @@ class ListWithNoQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.json()['results']
         self.assertEqual(2, len(
-            results), 'Author should only see assignements for issues, assigned to */her/him')
+            results), 'Author should only see assignments for issues, assigned to */her/him')
         self.assertTrue(
             all((assignment['author'] == self.author.pk for assignment in results)))
 

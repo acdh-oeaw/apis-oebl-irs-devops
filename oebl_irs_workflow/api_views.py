@@ -1,5 +1,5 @@
 from typing import Type, Union
-from oebl_irs_workflow.permission import AuthorIssueLemmaAssignmentPermissions, IssueLemmaEditorAssignmentPermissions
+from oebl_irs_workflow.permission import AuthorIssueLemmaAssignmentPermissions, IssueLemmaEditorAssignmentPermissions, extract_permission_relevant_user_type
 from rest_framework.response import Response
 from rest_framework import filters, viewsets, renderers
 from rest_framework.views import APIView
@@ -8,6 +8,9 @@ from rest_framework import serializers
 from drf_spectacular.utils import inline_serializer, extend_schema, extend_schema_view
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from django.contrib.auth.models import User
+from django.db.models import QuerySet, Subquery
+
 
 from .models import (
     Author,
@@ -145,5 +148,24 @@ class AuthorIssueLemmaAssignmentViewSet(viewsets.ModelViewSet):
     
     serializer_class = AuthorIssueLemmaAssignmentSerializer
     permission_classes = [IsAuthenticated, AuthorIssueLemmaAssignmentPermissions, ]
-    queryset = AuthorIssueLemmaAssignment.objects.all()
     filter_fields = ['issue_lemma', 'author', 'edit_type', ]
+
+
+    def get_queryset(self) -> 'QuerySet':
+        
+        user: 'User' = self.request.user
+        query_all: 'QuerySet' = AuthorIssueLemmaAssignment.objects.all()
+
+        if user.is_superuser:
+            return query_all
+        
+        permission_relevant_user = extract_permission_relevant_user_type(user)
+
+        if permission_relevant_user.__class__ is Author:
+            return query_all.filter(author=permission_relevant_user)
+        elif permission_relevant_user.__class__ is Editor:
+            return query_all.filter(issue_lemma__in=Subquery(IssueLemma.objects.filter(editor=permission_relevant_user).values('pk')))       
+        else:
+            raise TypeError('Bad programming. Type guards did not work!')
+
+        

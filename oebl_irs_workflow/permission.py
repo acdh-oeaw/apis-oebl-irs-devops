@@ -170,7 +170,7 @@ class AuthorIssueLemmaAssignmentPermissions(permissions.BasePermission):
         if user.__class__ is Editor:
             return IssueLemma.objects.get(pk=issue_lemma_id).editor == user
         elif user.__class__ is Author:
-            AuthorIssueLemmaAssignment.objects.filter(issue_lemma=issue_lemma_id, author=user).exists()
+            return AuthorIssueLemmaAssignment.objects.filter(issue_lemma=issue_lemma_id, author=user).exists()
         else:
             # (༎ຶ⌑༎ຶ)
             raise TypeError('Bad programming. Type guards do not work.')

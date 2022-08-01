@@ -227,4 +227,4 @@ class AuthorIssueLemmaAssignmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AuthorIssueLemmaAssignment
-        fields = ['issue_lemma', 'author', 'edit_type', ]
+        fields = ['issue_lemma', 'author', 'edit_type', 'id', ]

@@ -69,7 +69,12 @@ def extract_permission_relevant_user_type(user: 'User') -> Union['Author', 'Edit
     raise PermissionDenied('Only authors and editors are allowed')
 
 
-class AuthorIssueLemmaAssignmentPermissions(permissions.BasePermission):
+class AuthorIssueLemmaAssignmentPermissions(permissions.BasePermission): 
+    """
+    The rules in has_permission and has_object_permission overlap a little and are a little confuse.
+    I will go on in developing the app, and hopefully come back after and refacor that. 
+    But time is limited.
+    """
 
     
     def has_permission(self, request: 'Request', view: 'AuthorIssueLemmaAssignmentViewSet') -> bool:
@@ -95,7 +100,7 @@ class AuthorIssueLemmaAssignmentPermissions(permissions.BasePermission):
 
             permission_relevant_user: 'Editor'
         
-            return self.editor_has_object_permission_including_post_requests(permission_relevant_user, request, view, assignment=None)
+            return self.editor_has_object_permission_including_post_requests(permission_relevant_user, request, assignment=None)
 
         elif is_issue_lemma_query:
             return self.has_permissions_for_issue_lemma_query(permission_relevant_user, int(request.GET['issue_lemma']))
@@ -132,39 +137,34 @@ class AuthorIssueLemmaAssignmentPermissions(permissions.BasePermission):
 
         permission_relevant_user: 'Editor'
 
-        return self.editor_has_object_permission_including_post_requests(permission_relevant_user, request, view, obj)
+        return self.editor_has_object_permission_including_post_requests(permission_relevant_user, request, obj)
 
 
     def editor_has_object_permission_including_post_requests(
             self, 
             editor: 'Editor',
-            request: 'Request', 
-            view: 'AuthorIssueLemmaAssignmentViewSet', 
+            request: 'Request',  
             assignment: Optional['AuthorIssueLemmaAssignment']
         ) -> bool:
+        """
+        Checks if editor is assigned to the issue lemma of an author issue assignment
+
+        If assignment is not provided an method is post, will look up issue lemma in the post request, 
+        else throw an TypeError
+        """
         
         if editor.__class__ is not Editor:
             raise TypeError('Bad programming. Type guards do not work.')
 
-        issue_lemma = self.get_issue_lemma(request, view, assignment)
-        return issue_lemma.editor == editor
-
-    def get_issue_lemma(
-            self,
-            request: 'Request', 
-            view: 'AuthorIssueLemmaAssignmentViewSet', 
-            assignment: Optional['AuthorIssueLemmaAssignment']
-        ) -> 'IssueLemma':
-        
         if assignment is not None:
-            return assignment.issue_lemma
-        
-        # ༼☯﹏☯༽
-        if request.method != 'POST':
+           issue_lemma = assignment.issue_lemma
+        elif request.method == 'POST':
+            issue_lemma = IssueLemma.objects.get(pk=request.data['issue_lemma'])
+        # ༼☯﹏☯༽        
+        else:
             raise TypeError('Bad programming. Type guards do not work.')
 
-        return IssueLemma.objects.get(pk=request.data['issue_lemma'])
-
+        return issue_lemma.editor == editor
 
     def has_permissions_for_issue_lemma_query(self, user: Union[Editor, Author], issue_lemma_id: int) -> bool:
         if user.__class__ is Editor:

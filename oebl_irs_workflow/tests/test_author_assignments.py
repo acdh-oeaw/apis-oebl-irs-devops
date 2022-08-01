@@ -119,17 +119,17 @@ class PostTestCase(LogOutMixin, MixedIssueLemmasMixin, APITestCase):
 
 class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
 
+
     def test_superuser(self):
         create_and_login_user(IrsUser, self.client)
         response = self.client.delete(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/')
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT,
-                         'Super users can delete everything.')
-        self.assertFalse(AuthorIssueLemmaAssignment.objects.exists(
-        ), 'After deleting, the assignment should not be in the database.')
+
+        self.assertFalse(
+            AuthorIssueLemmaAssignment.objects.filter(pk=self.editor_controlled_author_assignment.pk).exists(), 
+            'After deleting, the assignment should not be in the database.',
+        )
 
     def test_editor_assigned(self):
         self.client.login(username=self.editor.username, password='password')
@@ -146,37 +146,43 @@ class DeleteTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.delete(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Editors can not delete assignments for issues, they are not asssigned to.')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         (
+                             'Editors can not see assignments for issues, '
+                            'they are not asssigned to, '
+                            'and therefore not delete it'
+                         )
+                    )
         self.assertTrue(AuthorIssueLemmaAssignment.objects.filter(
             pk=self.editor_uncontrolled_author_assignment.pk).exists(),
             'After failing to delete, the assignment should still be in the database.'
         )
 
-    def test_author(self):
-        create_and_login_user(Author, self.client)
+    def test_author_assigned(self):
+        self.client.login(username=self.author.username, password='password')
         response = self.client.delete(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Authors can not delete assignments.')
+                         'Authors can not delete their assignments.')
+        self.assertTrue(
+            AuthorIssueLemmaAssignment.objects.filter(pk=self.editor_controlled_author_assignment.pk).exists(),
+            'After failing to delete, the assignment should still be in the database'
+        )
+
+    def test_author_not_assigned(self):
+        self.client.login(username=self.author.username, password='password')
         response = self.client.delete(
-            f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Authors can not delete assignments.')
-        self.assertEqual(
-            2,
-            AuthorIssueLemmaAssignment.objects.count(),
-            'After failing to delete, the assignments should still be in the database.'
+            f'/workflow/api/v1/author-issue-assignment/{self.some_other_assignment.pk}/')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Authors can not delete assignments, they can not see')
+        self.assertTrue(
+            AuthorIssueLemmaAssignment.objects.filter(pk=self.some_other_assignment.pk).exists(),
+            'After failing to delete, the assignment should still be in the database'
         )
 
 
 class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
 
-    some_other_author: Author
-
-    def setUp(self):
-        super().setUp()
-        self.some_other_author = Author.objects.create()
 
     def test_superuser_patch(self):
         create_and_login_user(IrsUser, self.client)
@@ -251,8 +257,8 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
                 'author': self.some_other_author.pk,
             }
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Editors can not change assignments for issues, they are not assigned to.')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Editors can not change assignments, thy can not view.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.some_other_author, self.editor_controlled_author_assignment.author,
                             'After failing PATCH, the data should not be changed')
@@ -268,14 +274,14 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
                 'edit_type': self.editor_uncontrolled_author_assignment.edit_type,
             }
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Editors can not change assignments for issues, they are not assigned to.')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Editors can not change assignments, they can not view.')
         self.editor_uncontrolled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.some_other_author, self.editor_uncontrolled_author_assignment.author,
                             'After failing PUT, the data should not be changed')
 
-    def test_author_patch(self):
-        create_and_login_user(Author, self.client)
+    def test_author_patch_own_permission(self):
+        self.client.login(username=self.author.username, password='password')
         response = self.client.patch(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
@@ -289,8 +295,24 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.assertNotEqual(self.some_other_author, self.editor_controlled_author_assignment.author,
                             'After failing PATCH, the data should not be changed')
 
-    def test_author_put(self):
-        create_and_login_user(Author, self.client)
+    def test_author_patch_somebody_else_permission(self):
+        self.client.login(username=self.author.username, password='password')
+        response = self.client.patch(
+            f'/workflow/api/v1/author-issue-assignment/{self.some_other_assignment.pk}/',
+            format='json',
+            data={
+                'author': self.author.pk,
+            }
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Authors can not change assignments, they can not see.')
+        self.some_other_assignment.refresh_from_db()
+        self.assertNotEqual(self.author, self.some_other_assignment.author,
+                            'After failing PATCH, the data should not be changed')
+        
+
+    def test_author_put_own_assignment(self):
+        self.client.login(username=self.author.username, password='password')
         response = self.client.put(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
@@ -304,6 +326,23 @@ class ReassignTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
                          'Authors can not change assignments.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.some_other_author, self.editor_controlled_author_assignment.author,
+                            'After failing PUT, the data should not be changed')
+
+    def test_author_put_sombody_else_assignment(self):
+        self.client.login(username=self.author.username, password='password')
+        response = self.client.put(
+            f'/workflow/api/v1/author-issue-assignment/{self.some_other_assignment.pk}/',
+            format='json',
+            data={
+                'issue_lemma': self.some_other_assignment.issue_lemma.pk,
+                'author': self.author.pk,
+                'edit_type': self.some_other_assignment.edit_type,
+            }
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Authors can not change assignments, thy can not see.')
+        self.editor_controlled_author_assignment.refresh_from_db()
+        self.assertNotEqual(self.author, self.some_other_assignment.author,
                             'After failing PUT, the data should not be changed')
 
 
@@ -384,8 +423,8 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
                 'edit_type': self.NEW_EDIT_TYPE,
             }
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Editors can not change assignments for issue, they are not responsible for.')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Editors can not change assignments for issues, they can not see.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
                             'After failing to submit a change, the database should not have new data.')
@@ -401,14 +440,14 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
                 'edit_type': self.NEW_EDIT_TYPE,
             }
         )
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Editors can not change assignments for issue, they are not responsible for.')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Editors can not change assignments for issues, they con not see.')
         self.editor_uncontrolled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_uncontrolled_author_assignment.edit_type,
                             'After failing to submit a change, the database should not have new data.')
 
-    def test_author_patch(self):
-        create_and_login_user(Author, self.client)
+    def test_author_patch_own_assignment(self):
+        self.client.login(username=self.author.username, password='password')
         response = self.client.patch(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/',
             format='json',
@@ -417,13 +456,30 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
             }
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
-                         'Authors can not change assignments.')
+                         'Authors can not change their assignments.')
         self.editor_controlled_author_assignment.refresh_from_db()
         self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
                             'After failing to submit a change, the database should not have new data.')
 
-    def test_author_put(self):
-        create_and_login_user(Author, self.client)
+
+    def test_author_patch_somebody_else_assignment(self):
+        self.client.login(username=self.author.username, password='password')
+        response = self.client.patch(
+            f'/workflow/api/v1/author-issue-assignment/{self.some_other_assignment.pk}/',
+            format='json',
+            data={
+                'edit_type': self.NEW_EDIT_TYPE,
+            },
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                          'Authors can not change assignments, they can not view.')
+        self.editor_controlled_author_assignment.refresh_from_db()
+        self.assertNotEqual(self.NEW_EDIT_TYPE, self.editor_controlled_author_assignment.edit_type,
+                            'After failing to submit a change, the database should not have new data.')
+
+
+    def test_author_put_own_assignment(self):
+        self.client.login(username=self.author.username, password='password')
         response = self.client.put(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_controlled_author_assignment.pk}/',
             format='json',
@@ -440,16 +496,26 @@ class ChangeAssignmentTypeTestCase(LogOutMixin, FullAssignmentMixin, APITestCase
                             'After failing to submit a change, the database should not have new data.')
 
 
+    def test_author_put_somebody_else_assignment(self):
+        self.client.login(username=self.author.username, password='password')
+        response = self.client.put(
+            f'/workflow/api/v1/author-issue-assignment/{self.some_other_assignment.pk}/',
+            format='json',
+            data={
+                'issue_lemma': self.some_other_assignment.issue_lemma.pk,
+                'author': self.some_other_assignment.author.pk,
+                'edit_type': self.NEW_EDIT_TYPE,
+            }
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND,
+                         'Authors can not change assignments, they can not view.')
+        self.some_other_assignment.refresh_from_db()
+        self.assertNotEqual(self.NEW_EDIT_TYPE, self.some_other_assignment.edit_type,
+                            'After failing to submit a change, the database should not have new data.')
+
+
 class ListWithNoQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
 
-    def setUp(self):
-        super().setUp()
-        # Set a third assignment, that our author should not see
-        AuthorIssueLemmaAssignment.objects.create(
-            issue_lemma=self.not_assigned_issue_lemma,  # Not assigned to the editor
-            author=Author.objects.create(),  # Not assigned to the author
-            edit_type=EditTypes.ANNOTATE,
-        )
 
     def test_superuser(self):
         create_and_login_user(IrsUser, self.client)
@@ -520,7 +586,7 @@ class ListWithQueryTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.json()['results']
         self.assertEqual(
-            2, len(results), 'Superuser should see all assignments for edit type')
+            3, len(results), 'Superuser should see all assignments for edit type')
         self.assertTrue(
             all((result['edit_type'] == self.EDIT_TYPE for result in results)))
 
@@ -633,7 +699,7 @@ class RetrieveTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.client.login(username=self.editor.username, password='password')
         response = self.client.get(
             f'/workflow/api/v1/author-issue-assignment/{self.editor_uncontrolled_author_assignment.pk}/')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_author_assigned(self):
         self.client.login(username=self.author.username, password='password')
@@ -646,4 +712,4 @@ class RetrieveTestCase(LogOutMixin, FullAssignmentMixin, APITestCase):
         self.client.login(username=self.author.username, password='password')
         response = self.client.get(
             f'/workflow/api/v1/author-issue-assignment/{self.assignment_to_other_author.pk}/')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

@@ -121,6 +121,9 @@ class FullAssignmentMixin(MixedIssueLemmasMixin):
     """This assignment belongs to on issue assigned to the editor"""
     editor_uncontrolled_author_assignment: 'AuthorIssueLemmaAssignment' 
     """This assignment is assigned to on issue, not assigned to the editor"""
+
+    some_other_author: 'Author'
+    some_other_assignment: 'AuthorIssueLemmaAssignment'
     
     EDIT_TYPE: EditTypes = EditTypes.WRITE
 
@@ -136,5 +139,12 @@ class FullAssignmentMixin(MixedIssueLemmasMixin):
         self.editor_uncontrolled_author_assignment = AuthorIssueLemmaAssignment.objects.create(
             issue_lemma = self.not_assigned_issue_lemma, # Not assigned to the editor
             author = self.author,
+            edit_type = self.EDIT_TYPE,
+        )
+
+        self.some_other_author = create_user(Author, 'Willhemine Quantz', 'password')
+        self.some_other_assignment = AuthorIssueLemmaAssignment.objects.create(
+            issue_lemma = IssueLemma.objects.create(lemma=Lemma.objects.create(first_name = 'Carla', name='Chava')),
+            author = self.some_other_author,
             edit_type = self.EDIT_TYPE,
         )

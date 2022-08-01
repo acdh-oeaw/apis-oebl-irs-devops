@@ -3,7 +3,6 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import DEFERRED
 from django.forms.models import model_to_dict
-from django.contrib import admin
 
 
 CHOICES_STAGE = (
@@ -96,9 +95,6 @@ class IssueLemma(models.Model):
         "LemmaStatus", on_delete=models.SET_NULL, null=True, blank=True
     )
     lemma = models.ForeignKey("Lemma", on_delete=models.SET_NULL, null=True)
-    author = models.ForeignKey(
-        "Author", on_delete=models.SET_NULL, null=True, blank=True
-    )
     editor = models.ForeignKey(
         "Editor", on_delete=models.SET_NULL, null=True, blank=True
     )
@@ -161,13 +157,6 @@ class IssueLemma(models.Model):
                     lemma["collection"] = [x.pk for x in lemma["collection"]]
             else:
                 lemma = None
-            if self._loaded_values["author_id"] is not None:
-                author = model_to_dict(
-                    Author.objects.get(pk=self._loaded_values["author_id"]),
-                    fields=["id", "username", "first_name", "last_name", "email"],
-                )
-            else:
-                author = None
             if self._loaded_values["editor_id"] is not None:
                 editor = model_to_dict(
                     Editor.objects.get(pk=self._loaded_values["editor_id"]),
@@ -180,7 +169,6 @@ class IssueLemma(models.Model):
                 "issue": issue,
                 "status": status,
                 "lemma": lemma,
-                "author": author,
                 "editor": editor,
             }
             if self.serialization is not None:
@@ -193,3 +181,40 @@ class IssueLemma(models.Model):
         else:
             ret = super().save(*args, **kwargs)
         return ret
+
+
+
+class EditTypes(models.TextChoices):
+    """Custom edit type system for Lemmas"""
+    VIEW = ('VIEW', 'VIEW')
+    COMMENT = ('COMMENT', 'COMMENT')
+    ANNOTATE = ('ANNOTATE', 'ANNOTATE')
+    WRITE = ('WRITE', 'WRITE')
+    """With `WRITE` including all other types"""
+
+
+class AuthorIssueLemmaAssignment(models.Model):
+    """Manage article assignments for users."""
+
+    issue_lemma = models.ForeignKey(
+        IssueLemma,
+        # When the issue lemma is deleted, the assignment has no meaning.
+        on_delete=models.CASCADE,
+        unique=False,   # One article can have multiple user assignments.
+        null=False,
+    )
+
+    author = models.ForeignKey(
+        Author,
+        # When the author is deleted, the assignment has no meaning.
+        on_delete=models.CASCADE,
+        unique=False,   # One user can have multiple article assignments.
+        null=False,
+    )
+
+    edit_type = models.CharField(
+        choices=EditTypes.choices,
+        null=False,
+        max_length=max((choice_tuple[1].__len__() for choice_tuple in EditTypes.choices))
+    )
+

@@ -72,6 +72,14 @@ if "oebl_research_backend" in settings.INSTALLED_APPS:
             include("oebl_research_backend.urls", namespace="oebl_research_backend"),
         )
     )
+    
+if "oebl_editor" in settings.INSTALLED_APPS:
+    urlpatterns.append(
+        url(
+            r"^editor/",
+            include("oebl_editor.urls", namespace="oebl_editor"),
+        )
+    )
 
 urlpatterns = urlpatterns + [
     url(r'^auth/', include('djoser.urls')),

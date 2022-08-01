@@ -8,6 +8,7 @@ from rest_framework.response import Response
 
 from .models import (
     Author,
+    AuthorIssueLemmaAssignment,
     Editor,
     Issue,
     IssueLemma,
@@ -117,7 +118,6 @@ class LemmaLabelSerializer(serializers.ModelSerializer):
 class IssueLemmaSerializerOpenApi(serializers.ModelSerializer):
     issue = IssueSerializer()
     lemma = LemmaSerializer()
-    author = AuthorSerializer()
     editor = EditorSerializer()
     status = LemmaStatusSerializer()
 
@@ -127,9 +127,26 @@ class IssueLemmaSerializerOpenApi(serializers.ModelSerializer):
 
 
 class IssueLemmaSerializer(serializers.ModelSerializer):
+    """
+    TODO: This class really needs some refactorization. 
+        - It is unclear, what the "serialization" field is for,
+        - why extened schema field?
+        - update and create are very simular, spaghetti, and not very pythonic.
+    I do not do it now, because, we have no tests and I don't have no time.
+    """
     notes = serializers.SerializerMethodField(method_name="get_notes")
     serialization = serializers.SerializerMethodField(method_name="get_serialization")
     lemma = LemmaSerializer()
+
+    authors = serializers.SerializerMethodField(method_name='get_assigned_authors')
+
+    def get_assigned_authors(self, issue_lemma: 'IssueLemma') -> List[int]:
+        return [
+            assignment.author_id
+            for assignment 
+            in issue_lemma.authorissuelemmaassignment_set.all()
+        ]
+
 
     @extend_schema_field(IssueLemmaSerializerOpenApi(many=True))
     def get_serialization(self, object):
@@ -191,3 +208,23 @@ class IssueLemmaSerializer(serializers.ModelSerializer):
         model = IssueLemma
         fields = "__all__"
         read_only_fields = ["serialization"]
+
+
+class EditorlessIssueLemmaSerializer(IssueLemmaSerializer):
+    """
+    A Serialization Of IssueLemma Without The Editor Field
+
+    Our requirement is, that authors and editors can not see, who is assigned for IssueLemmas.
+    """
+
+    class Meta:
+        model = IssueLemma
+        exclude = ['editor', ]
+        read_only_fields = ["serialization"]
+
+
+class AuthorIssueLemmaAssignmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AuthorIssueLemmaAssignment
+        fields = ['issue_lemma', 'author', 'edit_type', 'id', ]

@@ -54,6 +54,7 @@ ALLOWED_CIDR_NETS = ["10.0.0.0/8", "127.0.0.0/8"]
 INSTALLED_APPS += [
     "oebl_irs_workflow",
     "oebl_research_backend",
+    "oebl_editor",
     "django_celery_results",
     "django_extensions"
 ]

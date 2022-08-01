@@ -1,3 +1,5 @@
+from typing import Type, Union
+from oebl_irs_workflow.permission import AuthorIssueLemmaAssignmentPermissions, IssueLemmaEditorAssignmentPermissions, extract_permission_relevant_user_type
 from rest_framework.response import Response
 from rest_framework import filters, viewsets, renderers
 from rest_framework.views import APIView
@@ -6,6 +8,9 @@ from rest_framework import serializers
 from drf_spectacular.utils import inline_serializer, extend_schema, extend_schema_view
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from django.contrib.auth.models import User
+from django.db.models import QuerySet, Subquery
+
 
 from .models import (
     Author,
@@ -16,9 +21,12 @@ from .models import (
     Lemma,
     LemmaLabel,
     Editor,
+    AuthorIssueLemmaAssignment,
 )
 from .serializer_rl2wf import ResearchLemma2WorkflowLemmaSerializer
 from .serializers import (
+    AuthorIssueLemmaAssignmentSerializer,
+    EditorlessIssueLemmaSerializer,
     UserDetailSerializer,
     AuthorSerializer,
     EditorSerializer,
@@ -68,10 +76,18 @@ class IssueViewset(viewsets.ModelViewSet):
 class IssueLemmaViewset(viewsets.ModelViewSet):
 
     queryset = IssueLemma.objects.all()
-    serializer_class = IssueLemmaSerializer
-    filter_fields = ["lemma", "issue", "author", "editor"]
-    http_method_names = ["get", "post", "head", "options", "delete", "update", "patch"]
-    permission_classes = [IsAuthenticated]
+    filter_fields = ["lemma", "issue", "editor", ]
+    http_method_names = ["get", "post", "head", "options", "delete", "update", "patch", "put", ]
+    permission_classes = [IsAuthenticated, IssueLemmaEditorAssignmentPermissions]
+
+    def get_serializer_class(self) -> Union[Type[IssueLemmaSerializer], Type[EditorlessIssueLemmaSerializer]]:
+        """
+        Super users can see, which editor is assigned to an IssueLemma, authors and editors can not.
+        """
+        if self.request.user.is_superuser:
+            return IssueLemmaSerializer
+        else:
+            return EditorlessIssueLemmaSerializer
 
 
 class LemmaViewset(viewsets.ReadOnlyModelViewSet):
@@ -126,3 +142,30 @@ class ResearchLemma2WorkflowLemma(APIView):
             res = serializer.create(serializer.data, request.user)
             return Response(res, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AuthorIssueLemmaAssignmentViewSet(viewsets.ModelViewSet):
+    
+    serializer_class = AuthorIssueLemmaAssignmentSerializer
+    permission_classes = [IsAuthenticated, AuthorIssueLemmaAssignmentPermissions, ]
+    filter_fields = ['issue_lemma', 'author', 'edit_type', ]
+
+
+    def get_queryset(self) -> 'QuerySet':
+        
+        user: 'User' = self.request.user
+        query_all: 'QuerySet' = AuthorIssueLemmaAssignment.objects.all()
+
+        if user.is_superuser:
+            return query_all
+        
+        permission_relevant_user = extract_permission_relevant_user_type(user)
+
+        if permission_relevant_user.__class__ is Author:
+            return query_all.filter(author=permission_relevant_user)
+        elif permission_relevant_user.__class__ is Editor:
+            return query_all.filter(issue_lemma__in=Subquery(IssueLemma.objects.filter(editor=permission_relevant_user).values('pk')))       
+        else:
+            raise TypeError('Bad programming. Type guards did not work!')
+
+        

@@ -20,11 +20,6 @@ class LemmaArticle(models.Model):
     )
 
     published = models.BooleanField(null=False, default=False)
-    current_version = models.OneToOneField(
-        'LemmaArticleVersion',
-        on_delete=models.CASCADE,
-        null=True,  # An article can not be empty at creation time
-    )
 
 
 class LemmaArticleVersion(models.Model):

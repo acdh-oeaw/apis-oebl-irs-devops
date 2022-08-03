@@ -210,7 +210,7 @@ class IssueLemmaSerializer(serializers.ModelSerializer):
         read_only_fields = ["serialization"]
 
 
-class EditorlessIssueLemmaSerializer(IssueLemmaSerializer):
+class IssueLemmaNoEditorSerializer(IssueLemmaSerializer):
     """
     A Serialization Of IssueLemma Without The Editor Field
 

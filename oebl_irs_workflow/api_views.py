@@ -1,12 +1,11 @@
 from typing import Type, Union
 from oebl_irs_workflow.permission import AuthorIssueLemmaAssignmentPermissions, IssueLemmaEditorAssignmentPermissions, extract_permission_relevant_user_type
 from rest_framework.response import Response
-from rest_framework import filters, viewsets, renderers
+from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import serializers
 from drf_spectacular.utils import inline_serializer, extend_schema, extend_schema_view
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from django.contrib.auth.models import User
 from django.db.models import QuerySet, Subquery
@@ -26,7 +25,7 @@ from .models import (
 from .serializer_rl2wf import ResearchLemma2WorkflowLemmaSerializer
 from .serializers import (
     AuthorIssueLemmaAssignmentSerializer,
-    EditorlessIssueLemmaSerializer,
+    IssueLemmaNoEditorSerializer,
     UserDetailSerializer,
     AuthorSerializer,
     EditorSerializer,
@@ -72,7 +71,14 @@ class IssueViewset(viewsets.ModelViewSet):
     filter_fields = ["name", "pubDate"]
     permission_classes = [IsAuthenticated]
 
-
+@extend_schema_view(
+    list = extend_schema(responses=IssueLemmaSerializer),
+    retrieve = extend_schema(responses=IssueLemmaSerializer),
+    create = extend_schema(responses=IssueLemmaSerializer),
+    update = extend_schema(responses=IssueLemmaSerializer),
+    partial_update = extend_schema(responses=IssueLemmaSerializer),
+    destroy  = extend_schema(responses=IssueLemmaSerializer),
+)
 class IssueLemmaViewset(viewsets.ModelViewSet):
 
     queryset = IssueLemma.objects.all()
@@ -80,14 +86,14 @@ class IssueLemmaViewset(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "head", "options", "delete", "update", "patch", "put", ]
     permission_classes = [IsAuthenticated, IssueLemmaEditorAssignmentPermissions]
 
-    def get_serializer_class(self) -> Union[Type[IssueLemmaSerializer], Type[EditorlessIssueLemmaSerializer]]:
+    def get_serializer_class(self) -> Union[Type[IssueLemmaNoEditorSerializer], Type[IssueLemmaSerializer]]:
         """
         Super users can see, which editor is assigned to an IssueLemma, authors and editors can not.
         """
         if self.request.user.is_superuser:
             return IssueLemmaSerializer
         else:
-            return EditorlessIssueLemmaSerializer
+            return IssueLemmaNoEditorSerializer
 
 
 class LemmaViewset(viewsets.ReadOnlyModelViewSet):

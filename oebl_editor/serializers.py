@@ -6,7 +6,7 @@ class LemmaArticleSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = LemmaArticle
-        fields = ('issue_lemma', 'published', 'current_version', )
+        fields = ('issue_lemma', 'published', )
         
 
 class LemmaArticleVersionSerializer(serializers.ModelSerializer):

@@ -28,3 +28,5 @@ class LemmaArticleVersionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, LemmaArticleVersionPermissions]
 
     get_queryset = create_get_query_set_method_filtered_by_user(LemmaArticleVersion)
+
+    filterset_fields = ['lemma_article', ]

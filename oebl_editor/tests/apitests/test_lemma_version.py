@@ -34,6 +34,7 @@
 
 """
 from typing import List
+from oebl_editor import markup
 from oebl_editor.tests.utilitites.markup import create_a_document
 from rest_framework.test import APITestCase
 from rest_framework import status
@@ -41,7 +42,7 @@ from rest_framework import status
 from oebl_editor.models import LemmaArticle, LemmaArticleVersion
 from oebl_irs_workflow.models import Author, EditTypes, Editor, IrsUser
 
-from oebl_irs_workflow.tests.utilities import SetUpUserMixin
+from oebl_irs_workflow.tests.utilities import SetUpUserMixin, create_and_login_user
 from oebl_editor.tests.utilitites.db_content import VersionGenerator, create_and_assign_article, create_article
 
 
@@ -477,3 +478,25 @@ class NoRestrictionsOnMarkupTestCase(SetUpUserMixin, APITestCase):
             # and updates the data anyway
             LemmaArticleVersion.objects.get(pk=response.json()['id']).markup,
         )
+
+
+class ArticleQueryTestCase(APITestCase):
+
+    article_id: int
+    article_version_id: int
+
+    def setUp(self):
+        article = create_article()
+        self.article_id = article.pk
+        self.article_version_id = LemmaArticleVersion.objects.create(lemma_article = article, markup={'empty': 'data'}).pk
+        # Create another article, that is assigned to another article
+        LemmaArticleVersion.objects.create(lemma_article = create_article(), markup={'empty': 'data'}).pk
+
+    def test_query(self):
+        create_and_login_user(IrsUser, self.client)
+        response = self.client.get(f'/editor/api/v1/lemma-article-version/?lemma_article={self.article_id}')
+        data = response.json()
+        results = data['results']
+        self.assertEqual(1, len(results), 'Query should return 1 version')
+        version_id = results[0]['id']
+        self.assertEqual(version_id, self.article_version_id, 'This should be the id of the assigned article.')

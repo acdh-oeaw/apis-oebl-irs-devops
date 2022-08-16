@@ -12,6 +12,7 @@ from .api_views import (
     LemmaLabelViewset,
     ResearchLemma2WorkflowLemma,
     AuthorIssueLemmaAssignmentViewSet,
+    IssueLemmaUserAssignmentViewSet,
 )
 
 app_name = "oebl_irs_workflow"
@@ -26,6 +27,7 @@ router.register(r"lemma-status", LemmaStatusViewset)
 router.register(r"lemma-note", LemmaNoteViewset)
 router.register(r"lemma-label", LemmaLabelViewset)
 router.register(r"author-issue-assignment", AuthorIssueLemmaAssignmentViewSet, r"author-issue-assignment")
+router.register(rf"own-issue-lemma-assignment", IssueLemmaUserAssignmentViewSet, r"own-issue-lemma-assignment")
 
 urlpatterns = router.urls
 

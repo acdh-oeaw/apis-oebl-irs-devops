@@ -1,9 +1,14 @@
 from typing import Type, Union
+from oebl_editor.serializers import IssueLemmaUserAssignmentSerializer
 from oebl_irs_workflow.permission import AuthorIssueLemmaAssignmentPermissions, IssueLemmaEditorAssignmentPermissions, extract_permission_relevant_user_type
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.exceptions import APIException, NotFound
+
 from rest_framework import serializers
 from drf_spectacular.utils import inline_serializer, extend_schema, extend_schema_view
 from rest_framework import status
@@ -15,6 +20,7 @@ from .models import (
     Author,
     Issue,
     IssueLemma,
+    IssueLemmaUserAssignmentDataclass,
     LemmaStatus,
     LemmaNote,
     Lemma,
@@ -174,4 +180,30 @@ class AuthorIssueLemmaAssignmentViewSet(viewsets.ModelViewSet):
         else:
             raise TypeError('Bad programming. Type guards did not work!')
 
-        
+
+class IssueLemmaUserAssignmentViewSet(viewsets.ViewSet):
+    """
+    Utility class to view / retrieve all edit types for a user / issue-lemma pair.
+    """
+
+    # Help auto schema generation
+    serializer_class = IssueLemmaUserAssignmentSerializer
+
+    def retrieve(self, request: 'Request', pk: str) -> 'Response':
+
+        if not pk.isdigit():
+            raise APIException(f'pk {pk} is not numeric')
+
+        pk = int(pk)
+
+        try:
+            user_assignment_data = IssueLemmaUserAssignmentDataclass.get_from_user_issuelemma_pair(
+                request.user,
+                issue_lemma_pk=pk,
+            )
+        except (IssueLemma.DoesNotExist):
+            raise NotFound(f'did not find issue lemma for {pk}')
+
+        serializer = IssueLemmaUserAssignmentSerializer(instance=user_assignment_data, many=False)
+
+        return Response(serializer.data)

@@ -1,8 +1,13 @@
+from dataclasses import dataclass
+from typing import Dict, Literal
 from apis_core.apis_entities.models import Person
 from django.contrib.auth.models import User
 from django.db import models
 from django.db.models import DEFERRED
 from django.forms.models import model_to_dict
+
+from black import List
+from pyparsing import Optional
 
 
 CHOICES_STAGE = (
@@ -218,3 +223,45 @@ class AuthorIssueLemmaAssignment(models.Model):
         max_length=max((choice_tuple[1].__len__() for choice_tuple in EditTypes.choices))
     )
 
+@dataclass
+class IssueLemmaUserAssignmentDataclass:
+    """
+    Utility class to get all edit types for a user / issue-lemma pair.
+
+
+    :raises IssueLemma.DoesNotExist
+    """
+    edit_types: List[EditTypes]
+
+    @classmethod
+    def get_from_user_issuelemma_pair(cls, user: User, issue_lemma_pk: int) -> 'IssueLemmaUserAssignment':
+        """
+        Factory method to create IssueLemmaUserAssignments for a specific user / issue_lemma pair.
+        """
+        if user.is_superuser:
+            return cls(edit_types = [EditTypes.WRITE, ])
+        
+        if not hasattr(user, 'irsuser'):
+            return cls(edit_types = [])  
+
+        irs_user: 'IrsUser' = user.irsuser
+
+        if hasattr(irs_user, 'editor'):
+            requesting_editor: 'Editor' = irs_user.editor
+            issue_editor_db_response: Dict[Literal['editor'], Optional[Editor]] = IssueLemma.objects.filter(pk=issue_lemma_pk).values('editor').first()
+            if requesting_editor.pk == issue_editor_db_response["editor"]:
+                return cls(edit_types = [EditTypes.WRITE, ])
+            else:
+                # May also be an author, so check down here
+                pass
+    
+        if hasattr(irs_user, 'author'):
+            author: 'Author' = irs_user.author
+            assignments: Dict[Literal['edit_type'], EditTypes] = AuthorIssueLemmaAssignment.objects.filter(
+                author=author, issue_lemma=issue_lemma_pk
+            ).values('edit_type').all()
+            edit_types: List[EditTypes] = [assignment['edit_type'] for assignment in assignments]
+            return cls(edit_types=edit_types)
+
+        # Default: No assignments
+        return cls(edit_types = [])

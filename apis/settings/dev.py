@@ -47,7 +47,7 @@ ALLOWED_HOSTS = re.sub(
         "GITLAB_ENVIRONMENT_URL", os.environ.get("ALLOWED_HOSTS", "localhost,127.0.0.1")
     ),
 ).split(",")
-ALLOWED_HOSTS += ["oebl-irs-backend.acdh-dev.oeaw.ac.at", "backend", "backend:8000", "localhost:40651"]
+ALLOWED_HOSTS += ["oebl-irs-backend.acdh-dev.oeaw.ac.at", "backend", "backend:8000", "localhost:40651", "*"]
 # You need to allow '10.0.0.0/8' for service health checks.
 ALLOWED_CIDR_NETS = ["10.0.0.0/8", "127.0.0.0/8"]
 

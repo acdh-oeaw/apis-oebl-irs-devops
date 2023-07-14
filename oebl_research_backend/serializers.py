@@ -249,7 +249,10 @@ class ListEntrySerializer(serializers.ModelSerializer):
             res = []
             for uri in object.person.uris:
                 if "d-nb.info" in uri:
-                    res.append(uri.split("/")[-2])
+                    gnd_split = uri.split("/")
+                    for idx, part in gnd_split:
+                        if part == "gnd": 
+                            res.append(gnd_split[idx+1])
             return res
         return []
 

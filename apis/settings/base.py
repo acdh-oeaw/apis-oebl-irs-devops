@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 from typing import Dict, Any
-from rest_framework.authentication import TokenAuthentication
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(
@@ -105,9 +104,6 @@ SPECTACULAR_SETTINGS: Dict[str, Any] = {
 
 CRISPY_TEMPLATE_PACK = "bootstrap3"
 
-class IRSTokenAuthentication(TokenAuthentication):
-    keyword = "Bearer"
-
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
@@ -119,7 +115,7 @@ REST_FRAMEWORK = {
         # use IsAuthenticated for every logged in user to have global edit rights
     ),
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        IRSTokenAuthentication,
+        "apis.settings.auth.IRSTokenAuthentication",
         "rest_framework.authentication.TokenAuthentication",
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",

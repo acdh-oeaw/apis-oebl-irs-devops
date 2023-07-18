@@ -56,7 +56,7 @@ if "apis_bibsonomy" in settings.INSTALLED_APPS:
         url(r"^bibsonomy/", include("apis_bibsonomy.urls", namespace="bibsonomy"))
     )
 
-if "oebl_irs_workflow" in settings.INSTALLED_APPS:
+if "oebl_irs_workflow.apps.ApisIRSWorkflowConfig" in settings.INSTALLED_APPS:
     urlpatterns.append(
         url(
             r"^workflow/",

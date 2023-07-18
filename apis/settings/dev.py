@@ -53,7 +53,7 @@ ALLOWED_HOSTS += ["oebl-irs-backend.acdh-dev.oeaw.ac.at", "backend", "backend:80
 ALLOWED_CIDR_NETS = ["10.0.0.0/8", "127.0.0.0/8"]
 
 INSTALLED_APPS += [
-    "oebl_irs_workflow",
+    "oebl_irs_workflow.apps.ApisIRSWorkflowConfig",
     "oebl_research_backend",
     "oebl_editor",
     "django_celery_results",

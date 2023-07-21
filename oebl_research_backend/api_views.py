@@ -21,6 +21,12 @@ class LemmaResearchFilter(filters.FilterSet):
     modified_after = filters.DateTimeFilter(field_name="last_updated", lookup_expr="gt")
     last_name = filters.CharFilter(method="search_def", field_name="person__name")
     first_name = filters.CharFilter(method="search_def", field_name="person__first_name")
+    sort = filters.OrderingFilter(
+        fields=(
+            ("person__first_name", "first_name"),
+            ("person__name", "last_name")
+            )
+    )
 
     class Meta:
         model = ListEntry

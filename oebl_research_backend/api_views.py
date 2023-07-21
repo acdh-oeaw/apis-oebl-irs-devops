@@ -10,6 +10,7 @@ from drf_spectacular.utils import inline_serializer, extend_schema, extend_schem
 from drf_spectacular.types import OpenApiTypes
 from rest_framework import status
 from django_filters import rest_framework as filters
+from django.contrib.postgres.search import SearchVector
 
 from .models import ListEntry, List, Editor, CHOICES_GENDER
 from .serializers import ListEntrySerializer, ListSerializer, create_alternative_names_field, create_secondary_literature_field, create_zotero_keys_field, create_gideon_legacy_literature_field
@@ -17,10 +18,16 @@ from .serializers import ListEntrySerializer, ListSerializer, create_alternative
 
 class LemmaResearchFilter(filters.FilterSet):
     modified_after = filters.DateTimeFilter(field_name="last_updated", lookup_expr="gt")
+    last_name = filters.CharFilter(method="search_def", field_name="person__name")
+    first_name = filters.CharFilter(method="search_def", field_name="person__first_name")
 
     class Meta:
         model = ListEntry
         fields = ["modified_after", "deleted"]
+    
+    def search_def(self, queryset, field_name, value):
+        q = {f"{field_name}__search": value}
+        return queryset.filter(**q)
 
 
 @extend_schema(

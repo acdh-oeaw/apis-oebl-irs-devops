@@ -1,3 +1,4 @@
+import json
 from numpy import require
 from rest_framework.generics import ListCreateAPIView
 from rest_framework.mixins import DestroyModelMixin
@@ -21,6 +22,8 @@ class LemmaResearchFilter(filters.FilterSet):
     modified_after = filters.DateTimeFilter(field_name="last_updated", lookup_expr="gt")
     last_name = filters.CharFilter(method="search_def", field_name="person__name")
     first_name = filters.CharFilter(method="search_def", field_name="person__first_name")
+    columns_user = filters.CharFilter(method="search_json_field")
+    columns_scrape = filters.CharFilter(method="search_json_field")
     search = filters.CharFilter(method="search_vector")
     sort = filters.OrderingFilter(
         fields=(
@@ -42,6 +45,13 @@ class LemmaResearchFilter(filters.FilterSet):
         return queryset.annotate(
         search=SearchVector("person__name", "person__first_name"),
             ).filter(search=value)
+    
+    def search_json_field(self, queryset, field_name, value):
+        q = json.loads(value)
+        q2 = {}
+        for k, v in q.items():
+            q2[f"{field_name}__{k}"] = v
+        return queryset.filter(**q2)
 
 
 @extend_schema(

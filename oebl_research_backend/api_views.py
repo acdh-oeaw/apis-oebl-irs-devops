@@ -17,6 +17,7 @@ from .serializers import ListEntrySerializer, ListSerializer, create_alternative
 
 
 class LemmaResearchFilter(filters.FilterSet):
+    list_id = filters.NumberFilter(field_name="list_id", lookup_expr="exact")
     modified_after = filters.DateTimeFilter(field_name="last_updated", lookup_expr="gt")
     last_name = filters.CharFilter(method="search_def", field_name="person__name")
     first_name = filters.CharFilter(method="search_def", field_name="person__first_name")

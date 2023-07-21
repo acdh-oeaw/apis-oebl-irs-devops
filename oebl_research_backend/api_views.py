@@ -21,10 +21,12 @@ class LemmaResearchFilter(filters.FilterSet):
     modified_after = filters.DateTimeFilter(field_name="last_updated", lookup_expr="gt")
     last_name = filters.CharFilter(method="search_def", field_name="person__name")
     first_name = filters.CharFilter(method="search_def", field_name="person__first_name")
+    search = filters.CharFilter(method="search_vector")
     sort = filters.OrderingFilter(
         fields=(
             ("person__first_name", "first_name"),
-            ("person__name", "last_name")
+            ("person__name", "last_name"),
+            ("list_id", "list_id"),
             )
     )
 
@@ -35,6 +37,11 @@ class LemmaResearchFilter(filters.FilterSet):
     def search_def(self, queryset, field_name, value):
         q = {f"{field_name}__search": value}
         return queryset.filter(**q)
+    
+    def search_vector(self, queryset,field_name, value):
+        return queryset.annotate(
+        search=SearchVector("person__name", "person__first_name"),
+            ).filter(search=value)
 
 
 @extend_schema(
